@@ -28,7 +28,9 @@ type ChanNum = Int
 -- | Temporary, this should go in a separate module too
 data GenFunc = Null deriving (Eq, Show, Data,Typeable)
 
-enumGen :: Monad m => GenFunc -> Enumerator (V.Vector Double) m a
+type Vec = V.Vector Double
+
+enumGen :: Monad m => GenFunc -> Enumerator Vec m a
 enumGen Null =
   let nullChunk = V.replicate defaultBufSize 0
       nullList  = nullChunk : nullList
@@ -46,8 +48,8 @@ data StreamExpr =
 compile ::
   (MonadCatchIO m, Functor m)
   => StreamExpr
-  -> (Iteratee (V.Vector Double) m a)
-  -> (m (Iteratee (V.Vector Double) m a))
+  -> (Iteratee Vec m a)
+  -> (m (Iteratee Vec m a))
 compile (FileSource fp af chan off dur) i =
   enumAudioIteratee fp $ do
     L.drop (off*numChans)
@@ -60,15 +62,9 @@ compile (Region expr off dur) i = compile expr
 compile (StreamSeq exprs) i = foldr (>=>) enumEof (map compile exprs) i
 compile (Mix s1 s2) i =
   let (e1, e2) = (compile s1, compile s2)
-  in  e1 $ e2 (joinI . mixEtee $ ilift lift i) >>= run
+  in mergeEnums e1 e2 mixEtee i
 
--- these don't go here either, but I'm leaving them for the moment for testing until I figure out the best place to but them...
-
-mixEtee = convStream mixIter
-
-mixIter :: Monad m => Iteratee (V.Vector Double) (Iteratee (V.Vector Double) m) (V.Vector Double)
-mixIter = do
-  iChunk <- lift getChunk
-  oChunk <- getChunk
-  return $ V.zipWith (+) iChunk oChunk
+-- | mix two streams.  Maybe this should go into sndfile-enumerators?
+mixEtee :: (Functor m, Monad m) => Enumeratee Vec Vec (Iteratee Vec m) a
+mixEtee = mergeByChunks (V.zipWith (+)) id id
 
