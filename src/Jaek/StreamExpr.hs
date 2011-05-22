@@ -7,8 +7,6 @@ module Jaek.StreamExpr (
   -- * Types
   StreamExpr (..)
   -- ** re-exported types
- ,SampleCount
- ,ChanNum
  ,GenFunc
  -- * Functions
  -- ** StreamExpr manipulations
@@ -20,6 +18,8 @@ module Jaek.StreamExpr (
 
 where
 
+import           Jaek.Base
+
 import           Sound.Iteratee
 import           Data.Iteratee.Iteratee
 import qualified Data.Iteratee.ListLike as L
@@ -28,13 +28,7 @@ import           Data.Generics.Uniplate.Direct
 
 import           Data.Data
 import           Data.List (mapAccumL)
-import           Control.Monad
 import           Control.Monad.CatchIO
-import           Control.Monad.Trans.Class
-
--- | temporary, will import this later
-type SampleCount = Int
-type ChanNum = Int
 
 type Vec = V.Vector Double
 
