@@ -6,19 +6,17 @@
 module Jaek.StreamExpr (
   -- * Types
   StreamExpr (..)
-  -- ** re-exported types
- ,GenFunc
- -- * Functions
- -- ** StreamExpr manipulations
+  -- * Functions
+  -- ** StreamExpr manipulations
  ,cut
  ,insert
- -- ** consuming StreamExprs
+  -- ** consuming StreamExprs
  ,compile
 )
 
 where
 
-import           Jaek.Base
+import           Jaek.Gen
 
 import           Sound.Iteratee
 import           Data.Iteratee.Iteratee
@@ -29,17 +27,6 @@ import           Data.Generics.Uniplate.Direct
 import           Data.Data
 import           Data.List (mapAccumL)
 import           Control.Monad.CatchIO
-
-type Vec = V.Vector Double
-
--- | Temporary, this should go in a separate module too
-data GenFunc = Null deriving (Eq, Show, Data,Typeable)
-
-enumGen :: Monad m => GenFunc -> Enumerator Vec m a
-enumGen Null =
-  let nullChunk = V.replicate defaultBufSize 0
-      nullList  = nullChunk : nullList
-  in  enumList nullList 
 
 data StreamExpr =
    FileSource FilePath AudioFormat ChanNum SampleCount SampleCount
