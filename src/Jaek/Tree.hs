@@ -7,6 +7,7 @@ module Jaek.Tree (
  ,TreeZip
  ,StreamT (..)
  ,initialZipper
+ ,newSource
  ,goToRef
  -- ** user functions
  ,mkCut
@@ -53,18 +54,21 @@ modifyListAt n f xs = let (h,t) = splitAt n xs in h ++ [f (head t)] ++ tail t
 -- This is not the same as the Data.Tree.Node constructor.  Instead, it's the
 -- label which is used inside a Tree (the payload at the Node).
 data Node =
-   Init String [StreamExpr]
+   Root
+ | Init String TreePath [StreamExpr]
  | Mod TreePath [StreamT] [StreamExpr]
  deriving (Eq, Show, Data, Typeable)
 
 -- | the number of channels in a node
 numChans :: Node -> Int
-numChans (Init _ chns)  = length chns
-numChans (Mod _ _ chns) = length chns
+numChans Root            = 0
+numChans (Init _ _ chns) = length chns
+numChans (Mod _ _ chns)  = length chns
 
 getExprs :: Node -> [StreamExpr]
-getExprs (Init _ chns)  = chns
-getExprs (Mod _ _ chns) = chns
+getExprs Root            = []
+getExprs (Init _ _ chns) = chns
+getExprs (Mod _ _ chns)  = chns
 
 -- | filter a list so only valid channels are included
 validateChans :: Node -> [Int] -> [Int]
@@ -82,10 +86,16 @@ instance Uniplate (Tree a) where
 
 type TreeZip = Zipper HTree HTree
 
--- | Construct the initial zipper from a set of StreamExprs (one per channel)
--- and a label
-initialZipper :: String -> [StreamExpr] -> TreeZip
-initialZipper lbl chans = zipper $ Node (Init lbl chans) []
+-- |An initial zipper.  Contains only a Root node.
+initialZipper = zipper $ Node Root []
+
+-- | Add a new source (top-level node) from a list of
+-- StreamExprs (one per channel) and a label
+newSource :: String -> [StreamExpr] -> TreeZip -> TreeZip
+newSource lbl chans zp =
+  let child pth = Init lbl pth chans
+      (tree,newpos) = addChild child $ fromZipper zp
+  in fromMaybe zp . followPath [newpos] $ zipper tree
 
 -- | generate a path to the currently-focused node
 getPath :: TreeZip -> TreePath
@@ -101,17 +111,22 @@ followPath (x:xs) =
 -- | given a tree, generate a path to a new child to the right of the current
 -- children.
 newChildPath :: HTree -> TreePath
-newChildPath (Node (Init _ _) children)     = [length children]
-newChildPath (Node (Mod path _ _) children) = path ++ [length children]
+newChildPath (Node Root children)            = [length children]
+newChildPath (Node (Init _ path _) children) = path ++ [length children]
+newChildPath (Node (Mod path _ _) children)  = path ++ [length children]
+
+-- Given an HTree, add a child with the correct TreePath.
+-- returns the position of the new child.
+addChild :: (TreePath -> Node) -> HTree -> (HTree, Int)
+addChild gen t@(Node nd children) =
+  let path = newChildPath t
+  in (Node nd (children ++ [Node (gen path) []]), last path)
 
 -- | Go to a reference within the current zipper
--- for an absolute path, checks that the label matches
 goToRef :: NodeRef -> TreeZip -> Maybe TreeZip
-goToRef (AbsPath lb pth) zp = case fromZipper zp of
-  t@(Node (Init lb' cs) _) | lb == lb' -> followPath pth $ zipper t
-  _                                    -> Nothing
-goToRef (RelPath pp pth) zp =
-  (foldr (>=>) return (replicate pp up) >=> followPath pth) zp
+goToRef (AbsPath lb pth) = followPath pth . zipper . fromZipper
+goToRef (RelPath pp pth) =
+  (foldr (>=>) return (replicate pp up) >=> followPath pth)
 
 -- ------------------------
 -- primary user functions
@@ -123,11 +138,10 @@ mkCut :: [Int] -> SampleCount -> SampleCount -> TreeZip -> TreeZip
 mkCut chns off dur zp =
   let cur@(Node nd children) = hole zp
       streamTs = map (\cn -> Cut cn off dur) $ validateChans nd chns
-      strExpr' = Mod (newChildPath cur)
-                     streamTs
+      strExpr' pth = Mod pth streamTs
                      (foldl applyTransform (getExprs nd) streamTs)
-      node'    = Node nd (children ++ [Node strExpr' [] ])
+      (node', pos) = addChild strExpr' cur
   in  case streamTs of
         [] -> zp
         _  -> fromMaybe (error "internal error in mkCut") $
-                followPath [last $ newChildPath cur] (replaceHole node' zp)
+                followPath [pos] (replaceHole node' zp)
