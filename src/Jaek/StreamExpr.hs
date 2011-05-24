@@ -70,7 +70,7 @@ compile (FileSource fp af chan off dur) i =
 compile (GenSource gfunc dur) i = enumGen gfunc $ joinI (L.takeUpTo dur i)
 compile (Region expr off dur) i = compile expr
                                     (L.drop off >> joinI (L.takeUpTo dur i))
-compile (StreamSeq exprs) i = foldr (>=>) enumEof (map compile exprs) i
+compile (StreamSeq exprs) i = foldr ((>=>) . compile) enumEof exprs i
 compile (Mix s1 s2) i =
   let (e1, e2) = (compile s1, compile s2)
   in mergeEnums e1 e2 mixEtee i
@@ -110,8 +110,7 @@ insertRegion
   -> StreamExpr   -- ^ source expression
   -> StreamExpr   -- ^ destination expression
   -> StreamExpr
-insertRegion srcOff srcDur dstOff src dst =
-  insert dstOff (Region src srcOff srcDur) dst
+insertRegion srcOff srcDur dstOff src = insert dstOff (Region src srcOff srcDur)
 
 -- | Mix together two sources for the specified duration.
 -- 

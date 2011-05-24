@@ -49,7 +49,7 @@ validateChans :: Node -> [Int] -> [Int]
 validateChans nd = filter (\i -> i >= 0 && i < numChans nd)
 
 instance Uniplate Node where
-  uniplate nd = plate nd
+  uniplate = plate
 
 -- | The main history tree type
 type HTree = Tree Node
@@ -78,9 +78,9 @@ getPath zp = case hole zp of
   _                       -> []    -- at head of zipper
 
 followPath :: TreePath -> TreeZip -> Maybe TreeZip
-followPath []     = Just
-followPath (x:xs) =
-  (down >=> foldr (>=>) return (replicate x right)) >=> followPath xs
+followPath = foldr (\x ->
+   (>=>) (down >=> foldr (>=>) return (replicate x right)))
+  Just
 
 -- | given a tree, generate a path to a new child to the right of the current
 -- children.
@@ -100,7 +100,7 @@ addChild gen t@(Node nd children) =
 goToRef :: NodeRef -> TreeZip -> Maybe TreeZip
 goToRef (AbsPath pth)    = followPath pth . zipper . fromZipper
 goToRef (RelPath pp pth) =
-  (foldr (>=>) return (replicate pp up) >=> followPath pth)
+  foldr (>=>) return (replicate pp up) >=> followPath pth
 
 -- | Get the StreamExpr from the tree at the specified path and channel
 getExpr :: NodeRef -> ChanNum -> TreeZip -> Maybe StreamExpr
