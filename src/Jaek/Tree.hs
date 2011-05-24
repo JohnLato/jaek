@@ -1,5 +1,15 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 
+-- | This module defines the HTree (HistoryTree) type and associated zipper and
+-- operations.  An HTree will always have the form
+-- 
+-- >                                    Root
+-- >  (Init "file1" [0] (FileSource ...)) (Init "file2" [1] (FileSource ...))
+-- >  (Mod ...)  (Mod ...)                (Mod ...)
+-- 
+-- i.e. A root node at the top, with 0 or more @Init@ children.  Every other
+-- node in the tree is a @Mod@ below one of the Init's.
+-- 
 module Jaek.Tree (
   TreePath
  ,NodeRef (..)
@@ -10,6 +20,7 @@ module Jaek.Tree (
  ,goToRef
  -- ** user functions
  ,mkCut
+ ,mkInsert
 )
 
 where
@@ -24,6 +35,7 @@ import           Data.Generics.Uniplate.Zipper
 import           Data.Data
 import           Data.Maybe
 import           Data.Tree
+
 
 -- This is not the same as the Data.Tree.Node constructor.  Instead, it's the
 -- label which is used inside a Tree (the payload at the Node).
@@ -47,6 +59,11 @@ getExprs (Mod _ _ chns)  = chns
 -- | filter a list so only valid channels are included
 validateChans :: Node -> [Int] -> [Int]
 validateChans nd = filter (\i -> i >= 0 && i < numChans nd)
+
+-- | Filter a list of (srcChan, dstChan) so only valid 'dstChan'
+-- channels are included
+validateChanP :: Node -> [(Int,Int)] -> [(Int,Int)]
+validateChanP nd = filter (\(_,i) -> i >= 0 && i < numChans nd)
 
 instance Uniplate Node where
   uniplate = plate
@@ -143,4 +160,25 @@ mkCut chns off dur zp =
   in  case streamTs of
         [] -> zp
         _  -> fromMaybe (error "internal error in mkCut") $
+                followPath [pos] (replaceHole node' zp)
+
+-- | Perform an insert in the current node.
+mkInsert
+  :: [(Int,Int)]   -- ^ (srcChn, dstChn)
+  -> SampleCount   -- ^ source Offset
+  -> SampleCount   -- ^ source duration
+  -> SampleCount   -- ^ destination offset
+  -> NodeRef       -- ^ reference to source expression
+  -> TreeZip
+  -> TreeZip
+mkInsert chns srcOff dur dstOff srcref zp =
+  let cur@(Node nd children) = hole zp
+      streamTs = map (\(srcChn, dstChn) ->
+        Insert dstChn srcref srcChn dstOff srcOff dur) $ validateChanP nd chns
+      strExpr' pth = Mod pth streamTs
+                     (foldl (applyTransform zp) (getExprs nd) streamTs)
+      (node', pos) = addChild strExpr' cur
+  in  case streamTs of
+        [] -> zp
+        _  -> fromMaybe (error "internal error in mkInsert") $
                 followPath [pos] (replaceHole node' zp)
