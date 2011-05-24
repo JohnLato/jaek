@@ -12,6 +12,7 @@ module Jaek.StreamExpr (
  ,trim
  ,insert
  ,insertRegion
+ ,mix
   -- ** consuming StreamExprs
  ,compile
 )
@@ -111,6 +112,24 @@ insertRegion
   -> StreamExpr
 insertRegion srcOff srcDur dstOff src dst =
   insert dstOff (Region src srcOff srcDur) dst
+
+-- | Mix together two sources for the specified duration.
+-- 
+-- The destination @StreamExpr@ (last argument) is unaltered before
+-- and after the mixed region.
+mix
+  :: SampleCount  -- ^ source offset
+  -> SampleCount  -- ^ duration
+  -> SampleCount  -- ^ destination offset
+  -> StreamExpr   -- ^ source expression
+  -> StreamExpr   -- ^ destination expression
+  -> StreamExpr
+mix srcOff dur dstOff src dst =
+  let pre  = Region dst 0 dstOff
+      post = Region dst (dstOff+dur) (getDur dst - (dstOff+dur))
+      dstm = Region dst dstOff dur
+      srcm = Region src srcOff dur
+  in cutCleanup $ StreamSeq [pre, Mix srcm dstm,post]
 
 -- ----------------------------------------------
 -- some cleanup rules
