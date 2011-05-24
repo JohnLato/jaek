@@ -9,7 +9,9 @@ module Jaek.StreamExpr (
   -- * Functions
   -- ** StreamExpr manipulations
  ,cut
+ ,trim
  ,insert
+ ,insertRegion
   -- ** consuming StreamExprs
  ,compile
 )
@@ -85,12 +87,30 @@ cut off dur expr =
       r2 = Region expr (off+dur) (getDur expr - (off+dur))
   in  cutCleanup $ StreamSeq [r1, r2]
 
--- | insert @StreamExpr b@ into @StreamExpr a@ at point n.
+-- | trim the start/end of a StreamExpr, only exposing @dur@ samples from
+-- @offset@.  Dual to 'cut'
+trim :: SampleCount -> SampleCount -> StreamExpr -> StreamExpr
+trim off dur expr = removeNegDurs . pushdownRegions $ Region expr off dur
+
+-- | insert @StreamExpr a@ into @StreamExpr b@ at point n.
 insert :: SampleCount -> StreamExpr -> StreamExpr -> StreamExpr
-insert n expr insertand =
-  let r1 = Region expr 0 n
-      r2 = Region expr n (getDur expr - n)
-  in  cutCleanup $ StreamSeq [r1, insertand, r2]
+insert n src dst =
+  let r1 = Region dst 0 n
+      r2 = Region dst n (getDur dst - n)
+  in  cutCleanup $ StreamSeq [r1, src, r2]
+
+-- | insert @StreamExpr b@ into @StreamExpr a@ at @dstOff@.
+-- 
+-- Similar to @insert . trim@, but more efficient.
+insertRegion
+  :: SampleCount  -- ^ source offset
+  -> SampleCount  -- ^ source duration
+  -> SampleCount  -- ^ destination offset
+  -> StreamExpr   -- ^ source expression
+  -> StreamExpr   -- ^ destination expression
+  -> StreamExpr
+insertRegion srcOff srcDur dstOff src dst =
+  insert dstOff (Region src srcOff srcDur) dst
 
 -- ----------------------------------------------
 -- some cleanup rules

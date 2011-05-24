@@ -102,10 +102,23 @@ goToRef (AbsPath pth)    = followPath pth . zipper . fromZipper
 goToRef (RelPath pp pth) =
   (foldr (>=>) return (replicate pp up) >=> followPath pth)
 
+-- | Get the StreamExpr from the tree at the specified path and channel
+getExpr :: NodeRef -> ChanNum -> TreeZip -> Maybe StreamExpr
+getExpr ref chn zp = do
+  z' <- goToRef ref zp
+  let exprs = getExprs $ rootLabel $ hole z'
+  if chn >= 0 && chn < length exprs
+    then Just $ exprs !! chn
+    else Nothing
+
 -- | Apply a stream transform to a list of StreamExprs, matching channels
-applyTransform :: [StreamExpr] -> StreamT -> [StreamExpr]
-applyTransform expr (Cut chn off dur) = modifyListAt chn (cut off dur) expr
-applyTransform _ _ = error "applyTransform not fully implemented"
+applyTransform :: TreeZip -> [StreamExpr] -> StreamT -> [StreamExpr]
+applyTransform _ expr (Cut chn off dur) = modifyListAt chn (cut off dur) expr
+applyTransform z expr (Insert dstChn ref srcChn dstOff srcOff dur) =
+  case getExpr ref srcChn z of
+    Nothing  -> []
+    Just src -> modifyListAt dstChn (insertRegion srcOff dur dstOff src) expr
+applyTransform _ _ _ = error "applyTransform not fully implemented"
 
 modifyListAt :: Int -> (a -> a) -> [a] -> [a]
 modifyListAt n f xs = let (h,t) = splitAt n xs in h ++ [f (head t)] ++ tail t
@@ -121,7 +134,7 @@ mkCut chns off dur zp =
   let cur@(Node nd children) = hole zp
       streamTs = map (\cn -> Cut cn off dur) $ validateChans nd chns
       strExpr' pth = Mod pth streamTs
-                     (foldl applyTransform (getExprs nd) streamTs)
+                     (foldl (applyTransform zp) (getExprs nd) streamTs)
       (node', pos) = addChild strExpr' cur
   in  case streamTs of
         [] -> zp

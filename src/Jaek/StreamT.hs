@@ -18,6 +18,6 @@ import           Data.Tree
 -- serialize.
 data StreamT =
    Cut    ChanNum         SampleCount SampleCount
- | Insert ChanNum NodeRef SampleCount SampleCount SampleCount
- | Mix    ChanNum NodeRef SampleCount SampleCount SampleCount
+ | Insert ChanNum NodeRef ChanNum SampleCount SampleCount SampleCount
+ | Mix    ChanNum NodeRef ChanNum SampleCount SampleCount SampleCount
  deriving (Eq, Show, Data, Typeable)
