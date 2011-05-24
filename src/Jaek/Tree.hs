@@ -15,8 +15,8 @@ module Jaek.Tree (
 where
 
 import           Jaek.Gen
-import           Jaek.StreamExpr
-import           Jaek.StreamT
+import           Jaek.StreamExpr as E
+import           Jaek.StreamT as T
 
 import           Data.Generics.Uniplate.Direct
 import           Data.Generics.Uniplate.Zipper
@@ -118,6 +118,10 @@ applyTransform z expr (Insert dstChn ref srcChn dstOff srcOff dur) =
   case getExpr ref srcChn z of
     Nothing  -> []
     Just src -> modifyListAt dstChn (insertRegion srcOff dur dstOff src) expr
+applyTransform z expr (T.Mix dstChn ref srcChn dstOff srcOff dur) =
+  case getExpr ref srcChn z of
+    Nothing  -> []
+    Just src -> modifyListAt dstChn (mix srcOff dur dstOff src) expr
 applyTransform _ _ _ = error "applyTransform not fully implemented"
 
 modifyListAt :: Int -> (a -> a) -> [a] -> [a]
