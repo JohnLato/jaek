@@ -5,7 +5,6 @@ module Jaek.Tree (
  ,NodeRef (..)
  ,HTree
  ,TreeZip
- ,StreamT (..)
  ,initialZipper
  ,newSource
  ,goToRef
@@ -17,6 +16,7 @@ where
 
 import           Jaek.Gen
 import           Jaek.StreamExpr
+import           Jaek.StreamT
 
 import           Data.Generics.Uniplate.Direct
 import           Data.Generics.Uniplate.Zipper
@@ -24,32 +24,6 @@ import           Data.Generics.Uniplate.Zipper
 import           Data.Data
 import           Data.Maybe
 import           Data.Tree
-
-type TreePath = [Int]
-
-data NodeRef =
-   AbsPath String TreePath
- | RelPath Int TreePath
- deriving (Eq, Show, Data, Typeable)
-
--- | stream transformers.  Could also have just a single function
--- with type StreamExpr -> StreamExpr, but that would be hard to
--- serialize.
--- 
--- these really should go in their own module...
-data StreamT =
-   Cut    ChanNum         SampleCount SampleCount
- | Insert ChanNum NodeRef SampleCount SampleCount SampleCount
- | Mix    ChanNum NodeRef SampleCount SampleCount SampleCount
- deriving (Eq, Show, Data, Typeable)
-
--- | Apply a stream transform to a list of StreamExprs, matching channels
-applyTransform :: [StreamExpr] -> StreamT -> [StreamExpr]
-applyTransform expr (Cut chn off dur) = modifyListAt chn (cut off dur) expr
-applyTransform _ _ = error "applyTransform not fully implemented"
-
-modifyListAt :: Int -> (a -> a) -> [a] -> [a]
-modifyListAt n f xs = let (h,t) = splitAt n xs in h ++ [f (head t)] ++ tail t 
 
 -- This is not the same as the Data.Tree.Node constructor.  Instead, it's the
 -- label which is used inside a Tree (the payload at the Node).
@@ -124,9 +98,17 @@ addChild gen t@(Node nd children) =
 
 -- | Go to a reference within the current zipper
 goToRef :: NodeRef -> TreeZip -> Maybe TreeZip
-goToRef (AbsPath lb pth) = followPath pth . zipper . fromZipper
+goToRef (AbsPath pth)    = followPath pth . zipper . fromZipper
 goToRef (RelPath pp pth) =
   (foldr (>=>) return (replicate pp up) >=> followPath pth)
+
+-- | Apply a stream transform to a list of StreamExprs, matching channels
+applyTransform :: [StreamExpr] -> StreamT -> [StreamExpr]
+applyTransform expr (Cut chn off dur) = modifyListAt chn (cut off dur) expr
+applyTransform _ _ = error "applyTransform not fully implemented"
+
+modifyListAt :: Int -> (a -> a) -> [a] -> [a]
+modifyListAt n f xs = let (h,t) = splitAt n xs in h ++ [f (head t)] ++ tail t
 
 -- ------------------------
 -- primary user functions
