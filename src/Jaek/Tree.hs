@@ -23,6 +23,7 @@ module Jaek.Tree (
  ,mkCut
  ,mkInsert
  ,mkMix
+ ,module Data.Generics.Uniplate.Zipper
 )
 
 where
