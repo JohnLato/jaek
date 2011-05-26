@@ -7,11 +7,8 @@ module Jaek.StreamT (
 where
 
 import           Jaek.Gen
-import           Jaek.StreamExpr
 
 import           Data.Data
-import           Data.Maybe
-import           Data.Tree
 
 -- | stream transformers.  Could also have just a single function
 -- with type StreamExpr -> StreamExpr, but that would be hard to

@@ -7,7 +7,7 @@
 -- >  (Init "file1" [0] (FileSource ...)) (Init "file2" [1] (FileSource ...))
 -- >  (Mod ...)  (Mod ...)                (Mod ...)
 -- 
--- i.e. A root node at the top, with 0 or more @Init@ children.  Every other
+-- i.e. A root node at the top, with 0 or more @Init@ childs.  Every other
 -- node in the tree is a @Mod@ below one of the Init's.
 -- 
 module Jaek.Tree (
@@ -18,6 +18,7 @@ module Jaek.Tree (
  ,initialZipper
  ,newSource
  ,goToRef
+ ,getPath
  -- ** user functions
  ,mkCut
  ,mkInsert
@@ -79,6 +80,7 @@ instance Uniplate (Tree a) where
 type TreeZip = Zipper HTree HTree
 
 -- |An initial zipper.  Contains only a Root node.
+initialZipper :: TreeZip
 initialZipper = zipper $ Node Root []
 
 -- | Add a new source (top-level node) from a list of
@@ -101,18 +103,18 @@ followPath = foldr (\x ->
   Just
 
 -- | given a tree, generate a path to a new child to the right of the current
--- children.
+-- childs.
 newChildPath :: HTree -> TreePath
-newChildPath (Node Root children)            = [length children]
-newChildPath (Node (Init _ path _) children) = path ++ [length children]
-newChildPath (Node (Mod path _ _) children)  = path ++ [length children]
+newChildPath (Node Root childs)            = [length childs]
+newChildPath (Node (Init _ path _) childs) = path ++ [length childs]
+newChildPath (Node (Mod path _ _) childs)  = path ++ [length childs]
 
 -- Given an HTree, add a child with the correct TreePath.
 -- returns the position of the new child.
 addChild :: (TreePath -> Node) -> HTree -> (HTree, Int)
-addChild gen t@(Node nd children) =
+addChild gen t@(Node nd childs) =
   let path = newChildPath t
-  in (Node nd (children ++ [Node (gen path) []]), last path)
+  in (Node nd (childs ++ [Node (gen path) []]), last path)
 
 -- | Go to a reference within the current zipper
 goToRef :: NodeRef -> TreeZip -> Maybe TreeZip
@@ -152,7 +154,7 @@ modifyListAt n f xs = let (h,t) = splitAt n xs in h ++ [f (head t)] ++ tail t
 
 mod1 :: String -> [Int] -> (ChanNum -> StreamT) -> TreeZip -> TreeZip
 mod1 nm chns gen zp =
-  let cur@(Node nd children) = hole zp
+  let cur@(Node nd _childs) = hole zp
       streamTs = map gen $ validateChans nd chns
       strExpr' pth = Mod pth streamTs
                      (foldl (applyTransform zp) (getExprs nd) streamTs)
@@ -169,7 +171,7 @@ mod2
   -> TreeZip
   -> TreeZip
 mod2 nm chns gen zp =
-  let cur@(Node nd children) = hole zp
+  let cur@(Node nd _childs) = hole zp
       streamTs = map (uncurry gen) $ validateChanP nd chns
       strExpr' pth = Mod pth streamTs
                      (foldl (applyTransform zp) (getExprs nd) streamTs)

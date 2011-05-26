@@ -13,7 +13,7 @@ import           Jaek.Base
 
 import           Sound.Iteratee
 import           Data.Iteratee.Iteratee
-import qualified Data.Iteratee.ListLike as L
+import           Data.Iteratee.ListLike ()
 import qualified Data.Vector.Storable as V
 
 import           Data.Data

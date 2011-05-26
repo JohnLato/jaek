@@ -145,6 +145,7 @@ removeNegDurs = transform f
   f x = x
 
 -- | remove null streams from sequences, and simplify sequences with 1 source
+simplifySeqs :: StreamExpr -> StreamExpr
 simplifySeqs = transform f
  where
   f (StreamSeq [s1])  = s1
@@ -158,6 +159,7 @@ simplifySeqs = transform f
 -- this will flatten all nested seqs, of any depth, into a single seq.
 -- it works on multiple depths because transform does a bottom-up rewrite,
 -- so at any point the depth is no more than 2
+commonSeqs :: StreamExpr -> StreamExpr
 commonSeqs = transform f
  where
   f (StreamSeq exprs) = StreamSeq $ childrenBi exprs >>= \f' ->
@@ -169,6 +171,7 @@ commonSeqs = transform f
 -- | combine and remove regions when possible
 -- remove sources where region offset > source duration
 -- THIS IS ONLY WELL-TESTED WITH GENSOURCE AND FILESOURCE; REGION MAY FAIL
+pushdownRegions :: StreamExpr -> StreamExpr
 pushdownRegions = transform f
  where
   f (Region x off dur)
@@ -190,7 +193,7 @@ pushdownRegions = transform f
              (pushdownRegions (Region s2 off dur))
          StreamSeq exprs -> StreamSeq . snd $ mapAccumL mf 0 exprs
           where
-            mf spos x = (getDur x + spos, transform f $ Region x (off-spos) dur)
+            mf pos x' = (getDur x' + pos, transform f $ Region x' (off-pos) dur)
          _ -> Region x off (min dur (getDur x - off))
   f x = x
     -- Offsets may temporarily be set to <0 within this function,
