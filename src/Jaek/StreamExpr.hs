@@ -1,4 +1,5 @@
-{-# LANGUAGE DeriveDataTypeable, NoMonomorphismRestriction
+{-# LANGUAGE DeriveDataTypeable
+            ,NoMonomorphismRestriction
             ,RankNTypes
             ,MultiParamTypeClasses
             ,FlexibleInstances #-}
@@ -71,9 +72,7 @@ compile (GenSource gfunc dur) i = enumGen gfunc $ joinI (L.takeUpTo dur i)
 compile (Region expr off dur) i = compile expr
                                     (L.drop off >> joinI (L.takeUpTo dur i))
 compile (StreamSeq exprs) i = foldr ((>=>) . compile) enumEof exprs i
-compile (Mix s1 s2) i =
-  let (e1, e2) = (compile s1, compile s2)
-  in mergeEnums e1 e2 mixEtee i
+compile (Mix s1 s2) i       = mergeEnums (compile s1) (compile s2) mixEtee i
 
 mixEtee :: (Functor m, Monad m) => Enumeratee Vec Vec (Iteratee Vec m) a
 mixEtee = L.mergeByChunks (V.zipWith (+)) id id
