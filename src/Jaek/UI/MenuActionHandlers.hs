@@ -2,6 +2,7 @@
 module Jaek.UI.MenuActionHandlers (
   createHandlers
  ,newHandler
+ ,module Jaek.UI.FrpHandlers
 )
 
 where
@@ -10,6 +11,7 @@ import Graphics.UI.Gtk
 import Jaek.Base
 import Jaek.UI.Actions
 import Jaek.UI.Dialogs
+import Jaek.UI.FrpHandlers
 
 import Reactive.Banana
 import System.Directory
