@@ -18,6 +18,7 @@ module Jaek.Tree (
  ,initialZipper
  ,newSource
  ,goToRef
+ ,nodePath
  ,getPath
  -- ** user functions
  ,mkCut
@@ -92,11 +93,14 @@ newSource lbl chans zp =
       (tree,newpos) = addChild child $ fromZipper zp
   in fromMaybe zp . followPath [newpos] $ zipper tree
 
+nodePath :: Node -> TreePath
+nodePath (Mod path _ _)  = path
+nodePath (Init _ path _) = path
+nodePath _               = []
+
 -- | generate a path to the currently-focused node
 getPath :: TreeZip -> TreePath
-getPath zp = case hole zp of
-  (Node (Mod path _ _) _) -> path
-  _                       -> []    -- at head of zipper
+getPath zp = let (Node nd _) = hole zp in nodePath nd
 
 followPath :: TreePath -> TreeZip -> Maybe TreeZip
 followPath = foldr (\x ->

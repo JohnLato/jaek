@@ -16,8 +16,8 @@ import           Jaek.UI.MenuActionHandlers
 
 import           Reactive.Banana
 import           Diagrams.Backend.Cairo.Gtk
+import           Diagrams.Prelude hiding (apply)
 import           Data.Maybe
-import           Data.Monoid
 
 uiDef :: String
 uiDef =
@@ -25,6 +25,7 @@ uiDef =
   \  <menubar>\
   \    <menu name=\"File\" action=\"FileAction\">\
   \      <menuitem name=\"New\" action=\"NewAction\" />\
+  \      <menuitem name=\"Import\" action=\"ImportAction\" />\
   \      <menuitem name=\"Close\" action=\"QuitAction\" />\
   \    </menu>\
   \  </menubar>\
@@ -48,13 +49,25 @@ createMainWindow = do
   -- add FRP handler stuff...
 
   prepareEvents $ do
-    eNewDoc <- newHandler standardGroup win
+    eNewDoc     <- newHandler standardGroup win
+    eNewSource  <- importHandler standardGroup win
     eMainExpose <- exposeEvents mainArea
-    let bZip = accumB initialZipper ( (\nm -> newSource nm []) <$> eNewDoc)
-    let bDraw = (const . renderToDrawingArea mainArea . drawTree . fromZipper)
-                <$> bZip
-    reactimate $ fmap print eNewDoc
-    reactimate $ apply bDraw (eMainExpose `mappend` (() <$ eNewDoc))
+    clicks      <- clickEvents mainArea
+    let bRoot = accumB "" ((\nm _ -> nm) <$> eNewDoc)  -- name of root directory
+    let bZip  = accumB initialZipper (
+                 ((\_ -> const initialZipper) <$> eNewDoc)
+                 <>
+                 ((\nm -> newSource nm []) <$> eNewSource))
+    let bDraw = (toBackendCoords . scale 150 . drawTree . fromZipper) <$> bZip
+    reactimate $ apply ((const . renderToDrawingAreaAbsolute mainArea) <$> bDraw)
+                       eMainExpose
+    -- redraw the window when the state is updated...
+    reactimate $ (const (widgetQueueDraw mainArea) <$> eNewDoc <> eNewSource)
+
+    let testClickE = apply ((\d clk ->  print $ runQuery (query d)
+                           (P (xPos clk, yPos clk)) ) <$> bDraw)
+                           clicks
+    reactimate $ (print <$> clicks) <> testClickE
 
   ui <- uiManagerNew
   ignore $ uiManagerAddUiFromString ui uiDef
@@ -79,6 +92,4 @@ defTree = fromMaybe z1 (mkCut [0] 7 10 <$> up z1)
  where
   z1 = mkCut [0] 0 1 $ mkCut [0] 4 2
        $ newSource "Source1" [GenSource Null 10] initialZipper
-
--- main = defaultMain $ drawTree $ fromZipper defTree
 

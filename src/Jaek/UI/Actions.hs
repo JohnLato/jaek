@@ -4,6 +4,7 @@ module Jaek.UI.Actions (
  ,fileAction
  ,newAction
  ,openAction
+ ,importAction
  ,propsAction
  ,quitAction
  ,renderAction
@@ -27,6 +28,9 @@ openAction = actionNew "OpenAction" "Open" Nothing Nothing
 
 newAction :: IO Action
 newAction = actionNew "NewAction" "New" Nothing Nothing
+
+importAction :: IO Action
+importAction = actionNew "ImportAction" "Import" Nothing Nothing
 
 quitAction :: IO Action
 quitAction = actionNew "QuitAction" "Quit" Nothing Nothing

@@ -2,13 +2,13 @@
 module Jaek.UI.MenuActionHandlers (
   createHandlers
  ,newHandler
+ ,importHandler
  ,module Jaek.UI.FrpHandlers
 )
 
 where
 
 import Graphics.UI.Gtk
-import Jaek.Base
 import Jaek.UI.Actions
 import Jaek.UI.Dialogs
 import Jaek.UI.FrpHandlers
@@ -37,13 +37,6 @@ quitHandler win act = on act actionActivated $ widgetDestroy win
 -- FRP handlers
 -- these create FRP Events rather than doing basic stuff.
 
--- | on actionActivated, perform the @IO a@ and create an @Event a@ from
--- the result.
-event0 :: Typeable a => Action -> IO a -> Prepare (Event a)
-event0 act ops = fromAddHandler $ \k -> do
-  on act actionActivated $ ops >>= k
-  return ()
-
 maybeEvent0 :: Typeable a => Action -> IO (Maybe a) -> Prepare (Event a)
 maybeEvent0 act ops = fromAddHandler $ \k -> do
    on act actionActivated $ ops >>= maybe (return ()) k
@@ -51,7 +44,7 @@ maybeEvent0 act ops = fromAddHandler $ \k -> do
 
 -- create a new document
 newHandler :: ActionGroup -> Window -> Prepare (Event String)
-newHandler actGrp win = do
+newHandler actGrp _win = do
   act <- liftIO newAction
   liftIO $ actionGroupAddActionWithAccel actGrp act Nothing
   maybeEvent0 act $ do
@@ -75,3 +68,24 @@ newHandler actGrp win = do
         either handleE return mfp
       _ -> widgetDestroy fc >> return Nothing
 
+-- import a new audio source
+importHandler :: ActionGroup -> Window -> Prepare (Event String)
+importHandler actGrp _win = do
+  act <- liftIO importAction
+  liftIO $ actionGroupAddActionWithAccel actGrp act Nothing
+  maybeEvent0 act $ do
+    fc <- fileChooserDialogNew (Just "Select an audio file to import")
+             Nothing
+             FileChooserActionOpen
+             []
+    fileChooserSetSelectMultiple fc True
+    dialogAddButton fc stockCancel ResponseCancel
+    dialogAddButton fc stockOk     ResponseOk
+    widgetShowAll fc
+    resp <- dialogRun fc
+    case resp of
+      ResponseOk -> do
+        mfn <- fileChooserGetFilename fc
+        widgetDestroy fc
+        return mfn
+      _ -> widgetDestroy fc >> return Nothing
