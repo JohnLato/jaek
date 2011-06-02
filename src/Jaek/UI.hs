@@ -58,9 +58,8 @@ createMainWindow = do
                  ((\_ -> const initialZipper) <$> eNewDoc)
                  <>
                  ((\nm -> newSource nm []) <$> eNewSource))
-    let bDraw = (toBackendCoords . scale 150 . drawTree . fromZipper) <$> bZip
-    reactimate $ apply ((const . renderToDrawingAreaAbsolute mainArea) <$> bDraw)
-                       eMainExpose
+    let bDraw = (toGtkCoords . scale 150 . drawTree . fromZipper) <$> bZip
+    reactimate $ apply ((\d _ -> widgetGetDrawWindow mainArea >>= flip renderToGtk d) <$> bDraw) eMainExpose
     -- redraw the window when the state is updated...
     reactimate $ (const (widgetQueueDraw mainArea) <$> eNewDoc <> eNewSource)
 
