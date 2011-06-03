@@ -9,6 +9,8 @@ module Jaek.UI.MenuActionHandlers (
 where
 
 import Graphics.UI.Gtk
+import Jaek.IO
+import Jaek.StreamExpr
 import Jaek.UI.Actions
 import Jaek.UI.Dialogs
 import Jaek.UI.FrpHandlers
@@ -69,7 +71,7 @@ newHandler actGrp _win = do
       _ -> widgetDestroy fc >> return Nothing
 
 -- import a new audio source
-importHandler :: ActionGroup -> Window -> Prepare (Event String)
+importHandler :: ActionGroup -> Window -> Prepare (Event (String, [StreamExpr]))
 importHandler actGrp _win = do
   act <- liftIO importAction
   liftIO $ actionGroupAddActionWithAccel actGrp act Nothing
@@ -85,7 +87,13 @@ importHandler actGrp _win = do
     resp <- dialogRun fc
     case resp of
       ResponseOk -> do
-        mfn <- fileChooserGetFilename fc
+        mfp <- fileChooserGetFilename fc
         widgetDestroy fc
-        return mfn
+        case mfp of
+          Nothing -> return Nothing
+          Just fp -> do
+            eExprs <- newFileExpr fp
+            case eExprs of
+              Left err    -> print err >> return Nothing
+              Right exprs -> return $ Just (fp, exprs)
       _ -> widgetDestroy fc >> return Nothing

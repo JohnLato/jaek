@@ -57,11 +57,12 @@ createMainWindow = do
     let bZip  = accumB initialZipper (
                  ((\_ -> const initialZipper) <$> eNewDoc)
                  <>
-                 ((\nm -> newSource nm []) <$> eNewSource))
+                 (uncurry newSource <$> eNewSource))
     let bDraw = (toGtkCoords . scale 150 . drawTree . fromZipper) <$> bZip
     reactimate $ apply ((\d _ -> widgetGetDrawWindow mainArea >>= flip renderToGtk d) <$> bDraw) eMainExpose
     -- redraw the window when the state is updated...
-    reactimate $ (const (widgetQueueDraw mainArea) <$> eNewDoc <> eNewSource)
+    reactimate $ const (widgetQueueDraw mainArea) <$>
+                 eNewDoc <> fmap fst eNewSource
 
     let testClickE = apply ((\d clk ->  print $ runQuery (query d)
                            (P (xPos clk, yPos clk)) ) <$> bDraw)
