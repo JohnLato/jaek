@@ -8,7 +8,7 @@ import           Graphics.UI.Gtk
 
 import           Jaek.Base
 import           Jaek.Gen
-import           Jaek.Render.Tree
+import           Jaek.Render
 import           Jaek.StreamExpr
 import           Jaek.Tree
 import           Jaek.UI.Actions
@@ -54,15 +54,18 @@ createMainWindow = do
     eMainExpose <- exposeEvents mainArea
     clicks      <- clickEvents mainArea
     let bRoot = accumB "" ((\nm _ -> nm) <$> eNewDoc)  -- name of root directory
-    let bZip  = accumB initialZipper (
-                 ((\_ -> const initialZipper) <$> eNewDoc)
-                 <>
-                 (uncurry newSource <$> eNewSource))
-    let bDraw = (toGtkCoords . scale 150 . drawTree . fromZipper) <$> bZip
+        bZip  = accumB initialZipper $
+                 (const initialZipper <$ eNewDoc)
+                 <> (uncurry newSource <$> eNewSource)
+        bDraw = bDrawF bZip bFocus
+        (bFocus, eFocChange) = focusF bDraw clicks
     reactimate $ apply ((\d _ -> widgetGetDrawWindow mainArea >>= flip renderToGtk d) <$> bDraw) eMainExpose
-    -- redraw the window when the state is updated...
-    reactimate $ const (widgetQueueDraw mainArea) <$>
-                 eNewDoc <> fmap fst eNewSource
+
+    -- redraw the window when the state is updated by dirtying the widget.
+    let redrawF = widgetQueueDraw mainArea
+    reactimate $ ( redrawF <$ eNewDoc)
+              <> ( redrawF <$ eNewSource)
+              <> ( redrawF <$ eFocChange)
 
     let testClickE = apply ((\d clk ->  print $ runQuery (query d)
                            (P (xPos clk, yPos clk)) ) <$> bDraw)

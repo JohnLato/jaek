@@ -20,7 +20,10 @@ module Jaek.Tree (
  ,goToRef
  ,nodePath
  ,getPath
- -- ** user functions
+ -- ** user node functions
+ ,numChans
+ ,getExprs
+ -- ** user tree manipulation functions
  ,mkCut
  ,mkInsert
  ,mkMix
@@ -55,10 +58,13 @@ numChans Root            = 0
 numChans (Init _ _ chns) = length chns
 numChans (Mod _ _ chns)  = length chns
 
-getExprs :: Node -> [StreamExpr]
-getExprs Root            = []
-getExprs (Init _ _ chns) = chns
-getExprs (Mod _ _ chns)  = chns
+getExprs  :: HTree -> [StreamExpr]
+getExprs (Node node _) = getExprs' node
+
+getExprs' :: Node -> [StreamExpr]
+getExprs' Root            = []
+getExprs' (Init _ _ chns) = chns
+getExprs' (Mod _ _ chns)  = chns
 
 -- | filter a list so only valid channels are included
 validateChans :: Node -> [Int] -> [Int]
@@ -131,7 +137,7 @@ goToRef (RelPath pp pth) =
 getExpr :: NodeRef -> ChanNum -> TreeZip -> Maybe StreamExpr
 getExpr ref chn zp = do
   z' <- goToRef ref zp
-  let exprs = getExprs $ rootLabel $ hole z'
+  let exprs = getExprs' $ rootLabel $ hole z'
   if chn >= 0 && chn < length exprs
     then Just $ exprs !! chn
     else Nothing
@@ -162,7 +168,7 @@ mod1 nm chns gen zp =
   let cur@(Node nd _childs) = hole zp
       streamTs = map gen $ validateChans nd chns
       strExpr' pth = Mod pth streamTs
-                     (foldl (applyTransform zp) (getExprs nd) streamTs)
+                     (foldl (applyTransform zp) (getExprs' nd) streamTs)
       (node', pos) = addChild strExpr' cur
   in  case streamTs of
         [] -> zp
@@ -179,7 +185,7 @@ mod2 nm chns gen zp =
   let cur@(Node nd _childs) = hole zp
       streamTs = map (uncurry gen) $ validateChanP nd chns
       strExpr' pth = Mod pth streamTs
-                     (foldl (applyTransform zp) (getExprs nd) streamTs)
+                     (foldl (applyTransform zp) (getExprs' nd) streamTs)
       (node', pos) = addChild strExpr' cur
   in  case streamTs of
         [] -> zp

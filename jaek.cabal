@@ -36,6 +36,8 @@ Executable jaek
   Other-modules:       Jaek.Base
                       ,Jaek.Gen
                       ,Jaek.IO
+                      ,Jaek.Render
+                      ,Jaek.Render.Stream
                       ,Jaek.Render.Tree
                       ,Jaek.StreamExpr
                       ,Jaek.StreamT
