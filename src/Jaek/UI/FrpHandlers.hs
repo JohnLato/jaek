@@ -5,6 +5,7 @@ module Jaek.UI.FrpHandlers (
  ,ClickEvent (..)
  ,exposeEvents
  ,clickEvents
+ ,genBSize
 )
 
 where
@@ -42,3 +43,15 @@ clickEvents widget =
     click <- eventClick
     (x,y) <- eventCoordinates
     liftIO $ k $ ClickE (click2ClickType click) x y
+
+-- | Create a behavior of the size of a widget.
+-- 
+-- In @Prepare@ because this is uses an internal @Event@.
+genBSize :: WidgetClass w => w -> Prepare (Behavior (Int, Int))
+genBSize widget = do
+   eSize <- e
+   sz <- liftIO $ widgetGetSize widget
+   return $ accumB sz (const <$> eSize)
+ where
+   e = fromAddHandler $ \k -> ignore $ on widget sizeAllocate $
+     \(Rectangle _ _ width height) -> k (width,height)

@@ -53,24 +53,22 @@ createMainWindow = do
     eNewSource  <- importHandler standardGroup win
     eMainExpose <- exposeEvents mainArea
     clicks      <- clickEvents mainArea
+    bSize       <- genBSize mainArea
     let bRoot = accumB "" ((\nm _ -> nm) <$> eNewDoc)  -- name of root directory
         bZip  = accumB initialZipper $
-                 (const initialZipper <$ eNewDoc)
-                 <> (uncurry newSource <$> eNewSource)
-        bDraw = bDrawF bZip bFocus
-        (bFocus, eFocChange) = focusF bDraw clicks
-    reactimate $ apply ((\d _ -> widgetGetDrawWindow mainArea >>= flip renderToGtk d) <$> bDraw) eMainExpose
+                  (const initialZipper <$ eNewDoc)
+                  <> (uncurry newSource <$> eNewSource)
+        bDraw = genBDraw bZip bFocus ( (\(x,y) -> (fI x, fI y)) <$> bSize)
+        (bFocus, eFocChange) = genBFocus bDraw clicks
+    reactimate $ apply ((\d _ -> do
+                 dw <- widgetGetDrawWindow mainArea
+                 renderToGtk dw d) <$> bDraw) eMainExpose
 
     -- redraw the window when the state is updated by dirtying the widget.
     let redrawF = widgetQueueDraw mainArea
     reactimate $ ( redrawF <$ eNewDoc)
               <> ( redrawF <$ eNewSource)
               <> ( redrawF <$ eFocChange)
-
-    let testClickE = apply ((\d clk ->  print $ runQuery (query d)
-                           (P (xPos clk, yPos clk)) ) <$> bDraw)
-                           clicks
-    reactimate $ (print <$> clicks) <> testClickE
 
   ui <- uiManagerNew
   ignore $ uiManagerAddUiFromString ui uiDef
