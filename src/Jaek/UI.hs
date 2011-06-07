@@ -1,5 +1,6 @@
 module Jaek.UI (
   createMainWindow
+ ,runInitialMenu
 )
 
 where
@@ -12,6 +13,7 @@ import           Jaek.Render
 import           Jaek.StreamExpr
 import           Jaek.Tree
 import           Jaek.UI.Actions
+import           Jaek.UI.Dialogs
 import           Jaek.UI.MenuActionHandlers
 
 import           Reactive.Banana
@@ -31,8 +33,8 @@ uiDef =
   \  </menubar>\
   \</ui>"
 
-createMainWindow :: IO Window
-createMainWindow = do
+createMainWindow :: String -> IO Window
+createMainWindow iProject = do
   win <- windowNew
 
   standardGroup <- actionGroupNew "standard"
@@ -54,7 +56,7 @@ createMainWindow = do
     eMainExpose <- exposeEvents mainArea
     clicks      <- clickEvents mainArea
     bSize       <- genBSize mainArea
-    let bRoot = accumB "" ((\nm _ -> nm) <$> eNewDoc)  -- name of root directory
+    let bRoot = accumB iProject ((\nm _ -> nm) <$> eNewDoc)
         bZip  = accumB initialZipper $
                   (const initialZipper <$ eNewDoc)
                   <> (uncurry newSource <$> eNewSource)
@@ -87,10 +89,4 @@ createMainWindow = do
 
   containerAdd win vbox
   return win
-
-defTree :: TreeZip
-defTree = fromMaybe z1 (mkCut [0] 7 10 <$> up z1)
- where
-  z1 = mkCut [0] 0 1 $ mkCut [0] 4 2
-       $ newSource "Source1" [GenSource Null 10] initialZipper
 

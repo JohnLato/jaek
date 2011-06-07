@@ -16,9 +16,6 @@ import Jaek.UI.Dialogs
 import Jaek.UI.FrpHandlers
 
 import Reactive.Banana
-import System.Directory
-import Control.Exception
-import Control.Monad.Trans.Maybe
 
 createHandlers :: ActionGroup -> Window -> IO ()
 createHandlers actGrp win =
@@ -49,26 +46,7 @@ newHandler :: ActionGroup -> Window -> Prepare (Event String)
 newHandler actGrp _win = do
   act <- liftIO newAction
   liftIO $ actionGroupAddActionWithAccel actGrp act Nothing
-  maybeEvent0 act $ do
-    fc <- fileChooserDialogNew (Just "Enter a name for this project")
-             Nothing
-             FileChooserActionCreateFolder
-             []
-    dialogAddButton fc stockCancel ResponseCancel
-    dialogAddButton fc stockOk     ResponseOk
-    widgetShowAll fc
-    resp <- dialogRun fc
-    case resp of
-      ResponseOk -> do
-        mfp <- try $ runMaybeT $ do
-                 fp <- MaybeT $ fileChooserGetFilename fc
-                 liftIO $ setCurrentDirectory fp
-                 return fp
-        widgetDestroy fc
-        let handleE :: SomeException -> IO (Maybe String)
-            handleE e = warnOnException e >> return Nothing
-        either handleE return mfp
-      _ -> widgetDestroy fc >> return Nothing
+  maybeEvent0 act newProjectDialog
 
 -- import a new audio source
 importHandler :: ActionGroup -> Window -> Prepare (Event (String, [StreamExpr]))

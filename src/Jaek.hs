@@ -13,8 +13,13 @@ main :: IO ()
 main = do
   ignore unsafeInitGUIForThreadedRTS
   ignore $ timeoutAddFull (Conc.yield >> return True) priorityDefaultIdle 50
-  win <- createMainWindow
-  widgetShowAll win
 
-  ignore $ onDestroy win mainQuit
-  mainGUI
+  mProjName <- runInitialMenu
+  case mProjName of
+    Nothing -> return ()
+    Just nm -> do
+      win <- createMainWindow nm
+      widgetShowAll win
+
+      ignore $ onDestroy win mainQuit
+      mainGUI
