@@ -8,9 +8,7 @@ where
 import           Graphics.UI.Gtk
 
 import           Jaek.Base
-import           Jaek.Gen
 import           Jaek.Render
-import           Jaek.StreamExpr
 import           Jaek.Tree
 import           Jaek.UI.Actions
 import           Jaek.UI.Dialogs
@@ -19,7 +17,6 @@ import           Jaek.UI.MenuActionHandlers
 import           Reactive.Banana
 import           Diagrams.Backend.Cairo.Gtk
 import           Diagrams.Prelude hiding (apply)
-import           Data.Maybe
 
 uiDef :: String
 uiDef =
@@ -60,11 +57,12 @@ createMainWindow iProject = do
         bZip  = accumB initialZipper $
                   (const initialZipper <$ eNewDoc)
                   <> (uncurry newSource <$> eNewSource)
-        bDraw = genBDraw bZip bFocus ( (\(x,y) -> (fI x, fI y)) <$> bSize)
-        (bFocus, eFocChange) = genBFocus bDraw clicks
+        bDraw = genBDraw bZip bFocus bSize
+        (bFocus, eFocChange) = genBFocus (bDraw bView) clicks
+        bView = pure $ WaveView 0 (44100*8)
     reactimate $ apply ((\d _ -> do
                  dw <- widgetGetDrawWindow mainArea
-                 renderToGtk dw d) <$> bDraw) eMainExpose
+                 renderToGtk dw d) <$> bDraw bView) eMainExpose
 
     -- redraw the window when the state is updated by dirtying the widget.
     let redrawF = widgetQueueDraw mainArea

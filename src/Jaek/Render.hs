@@ -1,5 +1,6 @@
 module Jaek.Render (
-  genBDraw
+  View (..)
+ ,genBDraw
  ,genBFocus
 )
 
@@ -21,27 +22,46 @@ import Diagrams.Backend.Cairo
 import Data.Maybe
 import System.IO.Unsafe (unsafePerformIO)
 
-drawAt zp Nothing    (x,_) = toGtkCoords . scale (0.25*x) . drawTree $
-  fromZipper zp
-drawAt zp (Just [])  (x,_) = toGtkCoords . scale (0.25*x) . drawTree $
-  fromZipper zp
-drawAt zp (Just ref) (x,y) =
-  maybe (toGtkCoords . scale (0.25*x) . drawTree $ fromZipper zp)
-        (\z' -> let d = alignB . vcat . map (unsafePerformIO . exprPeaks) .
-                          getExprs $ hole z'
-                    (dx,dy) = size2D d
-                    xscale = x / dx
-                    yscale = y / dy
-                in  d # scaleX xscale # scaleY yscale )
-   $ goToRef (AbsPath ref) zp
+-- | Specify how much of a diagram to view.
+data View =
+   FullView !Double !Double           -- ^ xScale, yScale
+ | WaveView !SampleCount !SampleCount -- ^ streamOff, streamDur
+ deriving (Eq, Show)
 
--- | generate a Behavior Diagram
+getOffset :: View -> SampleCount
+getOffset (WaveView off _) = off
+getOffset _                = 0
+
+getDur :: View -> SampleCount
+getDur (WaveView _ dur) = dur
+getDur _                = 44100    -- default duration, can do better
+
+drawAt zp Nothing    (x,_) _ = toGtkCoords . scale (0.25* fI x) . drawTree $
+  fromZipper zp
+drawAt zp (Just [])  (x,_) _ = toGtkCoords . scale (0.25* fI x) . drawTree $
+  fromZipper zp
+drawAt zp (Just ref) (x,y) view =
+  maybe (toGtkCoords . scale (0.25* fI x) . drawTree $ fromZipper zp)
+        (\z' -> let d = alignB . vcat
+                        . map (unsafePerformIO . exprPeaks off dur x)
+                        . getExprs $ hole z'
+                    (_dx,dy) = size2D d
+                    yscale = fI y / dy
+                in  d # scaleY yscale )
+   $ goToRef (AbsPath ref) zp
+ where
+  off = fI $ getOffset view
+  dur = fI $ getDur view
+
+-- | generate a Behavior Diagram producer
 genBDraw ::
   Behavior TreeZip
   -> Behavior (Maybe [Int])
-  -> Behavior (Double, Double)
+  -> Behavior (Int, Int)
+  -> Behavior View
   -> Behavior (AnnDiagram Cairo R2 (First TreePath))
-genBDraw bZip getFocus bsize = drawAt <$> bZip <*> getFocus <*> bsize
+genBDraw bZip getFocus bsize bview =
+  drawAt <$> bZip <*> getFocus <*> bsize <*> bview
 
 -- | Generate (Behavior (IO Focus), Event (IO Focus))
 --  the @Event Focus@ are emitted when the focus changes, and can be used to

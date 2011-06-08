@@ -26,10 +26,13 @@ pksz = 4096
 
 -- | create a Peak diagram from a StreamExpr
 exprPeaks ::
- (Renderable (Path R2) b) =>
-  StreamExpr
+ (Renderable (Path R2) b)
+  => SampleCount
+  -> SampleCount
+  -> Int
+  -> StreamExpr
   -> IO (AnnDiagram b R2 (First TreePath))
-exprPeaks expr = renderPeaks <$> genPeaks expr
+exprPeaks off dur w expr = renderPeaks off dur w <$> genPeaks expr
 
 -- need an Unboxed instance for this one...
 instance Monoid Peak where
@@ -47,14 +50,20 @@ genPeaks expr = do
 
 renderPeaks ::
   (Renderable (Path R2) b)
-  => U.Vector (Double,Double)
+  => SampleCount               -- ^ offset
+  -> SampleCount               -- ^ dur
+  -> Int                       -- ^ width
+  -> U.Vector (Double,Double)  -- ^ peaks
   -> AnnDiagram b R2 (First TreePath)
-renderPeaks pk =
+renderPeaks off dur w pk =
   let (l,h) = U.unzip pk
+      step  = dur `div` w
+      rvec vec = U.unfoldrN w (\i -> Just (vec U.! (i `div` pksz), i+step)) off
       toDgr = fmap (const (First Nothing))
               . stroke
               . fromVertices
               . map P
               . P.zip [0..]
               . U.toList
+              . rvec
   in  toDgr l `atop` toDgr h
