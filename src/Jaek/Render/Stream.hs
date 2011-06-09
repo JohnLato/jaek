@@ -57,13 +57,13 @@ renderPeaks ::
   -> AnnDiagram b R2 (First TreePath)
 renderPeaks off dur w pk =
   let (l,h) = U.unzip pk
-      step  = dur `div` w
-      rvec vec = U.unfoldrN w (\i -> Just (vec U.! (i `div` pksz), i+step)) off
+      step  = fI dur / fI w :: Double
+      getIx i = round $ (fI i * step + fI off) / fI pksz
+      rvec vec = U.generate w (\i -> let ix = getIx i in if ix >= U.length vec then 0 else vec U.! ix)
       toDgr = fmap (const (First Nothing))
               . stroke
               . fromVertices
-              . map P
-              . P.zip [0..]
+              . P.zipWith (curry P) [0..]
               . U.toList
               . rvec
   in  toDgr l `atop` toDgr h

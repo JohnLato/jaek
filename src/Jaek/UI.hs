@@ -59,7 +59,7 @@ createMainWindow iProject = do
                   <> (uncurry newSource <$> eNewSource)
         bDraw = genBDraw bZip bFocus bSize
         (bFocus, eFocChange) = genBFocus (bDraw bView) clicks
-        bView = pure $ WaveView 0 (44100*8)
+        bView = pure $ WaveView 0 (44100*4*60)
     reactimate $ apply ((\d _ -> do
                  dw <- widgetGetDrawWindow mainArea
                  renderToGtk dw d) <$> bDraw bView) eMainExpose
