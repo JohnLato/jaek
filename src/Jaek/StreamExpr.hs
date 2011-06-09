@@ -67,7 +67,7 @@ compile (FileSource fp af chan off dur) i =
   let numChans = fromIntegral $ numberOfChannels af
   in enumAudioIteratee fp $ do
        L.drop (off*numChans)
-       joinI $ (getChannel numChans chan <>< L.takeUpTo dur) i
+       joinI $ (getChannel numChans chan ><> L.takeUpTo dur) i
 compile (GenSource gfunc dur) i = enumGen gfunc $ joinI (L.takeUpTo dur i)
 compile (Region expr off dur) i = compile expr
                                     (L.drop off >> joinI (L.takeUpTo dur i))
