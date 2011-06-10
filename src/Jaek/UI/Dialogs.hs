@@ -8,6 +8,7 @@ where
 
 import Graphics.UI.Gtk
 import Jaek.Base
+import Jaek.Project
 
 import Control.Exception
 import Control.Monad.Trans
@@ -73,6 +74,7 @@ newProjectDialog = do
       mfp <- try $ runMaybeT $ do
                fp <- MaybeT $ fileChooserGetFilename fc
                liftIO $ setCurrentDirectory fp
+               liftIO $ createDirectoryIfMissing False peakDir
                return fp
       widgetDestroy fc
       let handleE :: SomeException -> IO (Maybe String)
