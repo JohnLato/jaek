@@ -22,7 +22,7 @@ import Diagrams.Backend.Cairo
 import Data.Maybe
 import System.IO.Unsafe (unsafePerformIO)
 
--- | Specify how much of a diagram to view.
+-- | Information about what's currently in view...
 data View =
    FullView !Double !Double           -- ^ xScale, yScale
  | WaveView !SampleCount !SampleCount -- ^ streamOff, streamDur

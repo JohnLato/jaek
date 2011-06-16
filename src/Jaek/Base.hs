@@ -9,6 +9,7 @@ module Jaek.Base (
  ,module Control.Monad
  ,module Control.Monad.Trans.Class
  ,fI
+ ,liftIO
  ,ignore
  ,annMaybe
 )
