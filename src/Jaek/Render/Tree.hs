@@ -23,7 +23,7 @@ drawTree = drawTree'
 -- seems more sensible, I just need to come up with the correct monoid,
 -- one which indicates the node we're in.
 drawTree' (Node dt childs) =
-   fmap (queryFunc $ nodePath dt) (circle
+   fmap (queryFunc $ nodePath dt) (circle 1
         # scaleY 0.5
         # fc darkblue
         # lw 0.1
