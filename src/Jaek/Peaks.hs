@@ -5,8 +5,8 @@
 module Jaek.Peaks (
   Peak (..)
  ,pksz
- ,genPeakFile
- ,readPeakFileNonBlocking
+ ,genPeaksForNode
+ ,createReadPeaksForNode
 )
 
 where
@@ -16,8 +16,10 @@ import           Prelude as P
 import           Jaek.Base
 import           Jaek.Project
 import           Jaek.StreamExpr
+import           Jaek.Tree
 
-import           Data.Iteratee as I
+import           Data.Iteratee (Iteratee (..), run, joinI, (><>))
+import qualified Data.Iteratee as I
 import           Blaze.ByteString.Builder
 
 import qualified Data.Vector.Generic.Mutable as M
@@ -26,10 +28,13 @@ import qualified Data.Vector.Storable as V
 import qualified Data.Vector.Unboxed as U
 
 import qualified Data.ByteString as BS
-import           Data.Monoid
-import           Data.Int
 import           Data.Bits
+import           Data.Int
+import           Data.Monoid
+import           Data.List (intercalate)
+import           Data.Tree
 
+import           Control.Concurrent
 import           Control.Exception
 import           GHC.Float (double2Int)
 import           System.Directory
@@ -42,13 +47,42 @@ data Peak = Pk {-# UNPACK #-} !Int16 {-# UNPACK #-} !Int16
 pksz :: Int
 pksz = 4096
 
+genPeakPath :: FilePath -> HTree -> [FilePath]
+genPeakPath root (Node node _) = map mkFp $ take nc [(0 :: Int) ..]
+ where
+  tp = nodePath node
+  nc = numChans node
+  mkFp ix = root </> peakDir </> intercalate "_" (map show tp) <.> show ix
+
+-- | create peak files for the currently-selected node
+genPeaksForNode :: FilePath -> TreeZip -> IO ()
+genPeaksForNode root tzip =
+  let htree = hole tzip
+      paths = genPeakPath root htree
+      exprs = getExprs htree
+  in  mapM_ (uncurry genPeakFile) $ zip paths exprs
+
+-- | read peak files for a node.  If the files don't exist, create them
+-- first.
+createReadPeaksForNode :: FilePath -> TreeZip -> IO [U.Vector Peak]
+createReadPeaksForNode root tzip =
+  let htree = hole tzip
+      paths = genPeakPath root htree
+      exprs = getExprs htree
+      checkAndRegen (path, expr) = do
+        putStrLn $ "checking for peak: " ++ path
+        needsRegen <- not <$> doesFileExist path
+        when needsRegen $ genPeakFile path expr
+  in do
+       mapM_ checkAndRegen $ zip paths exprs
+       mapM readPeakFile paths
+
 updatePeak :: Peak -> Double -> Peak
 updatePeak (Pk l h) x = Pk (min l x') (max h x')
  where
   x' = fI . double2Int $ x * fI (maxBound :: Int16)
 
--- | instead of using a lockfile, I could also explicitly pass locks around.
--- We'll see how it goes, but I'll probably stick with this for now.
+-- | create a peak file for a stream.  Very rudimentary support at present.
 genPeakFile :: FilePath -> StreamExpr -> IO ()
 genPeakFile fp expr =
   bracket opener
@@ -57,14 +91,18 @@ genPeakFile fp expr =
             I.group pksz ><> I.mapStream (V.foldl' updatePeak mempty)
             $ writePkStream h)
  where
-  lockfile = peakDir </> fp <.> "lck"
+  lockfile = fp <.> "lck"
   opener = do
-    h <- openBinaryFile (peakDir </> fp) WriteMode
+    putStrLn $ "peak file name: " ++ (fp)
+    h <- openBinaryFile (fp) WriteMode
+    putStrLn $ "creating lockfile: " ++ lockfile
     writeFile lockfile ""
+    putStrLn $ "lockfile created"
     return h
   closer h = do
     hClose h
     removeFile lockfile
+    putStrLn $ "removing lockfile: " ++ lockfile
 
 readPeakFileNonBlocking :: FilePath -> IO (Maybe (U.Vector Peak))
 readPeakFileNonBlocking fp = do
@@ -78,14 +116,23 @@ readPeakFileNonBlocking fp = do
             (toInt16 (BS.index bs (ix+2)) (BS.index bs (ix+3)))
       )
  where
-  lockfile = peakDir </> fp <.> "lck"
+  lockfile = fp <.> "lck"
   toInt16 l h = fI $ (fI l :: Int) + shiftL (fI h) 8
+
+readPeakFile :: FilePath -> IO (U.Vector Peak)
+readPeakFile fp = go
+ where
+  go = do
+    res <- readPeakFileNonBlocking fp
+    case res of
+      Just v -> return v
+      Nothing -> threadDelay 400 >> go
 
 writePkStream :: Handle -> Iteratee [Peak] IO ()
 writePkStream h = do
-  cs <- joinI $ I.take 2048 stream2list
+  cs <- joinI $ I.take 2048 I.stream2list
   let bld = fromWriteList
-              (\(Pk l h) -> writeInt16le l `mappend` writeInt16le h)
+              (\(Pk l hi) -> writeInt16le l `mappend` writeInt16le hi)
               cs
   liftIO $ toByteStringIO (BS.hPut h) bld
   

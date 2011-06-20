@@ -11,7 +11,6 @@ import Jaek.Base
 import Jaek.Project
 
 import Control.Exception
-import Control.Monad.Trans
 import Control.Monad.Trans.Maybe
 
 import System.Directory
@@ -44,7 +43,7 @@ initialMenu = do
 
 runInitialMenu :: IO (Maybe String)
 runInitialMenu = do
-  (dlg, r1, r2) <- initialMenu
+  (dlg, r1, _r2) <- initialMenu
   widgetShowAll dlg
 
   rsp <- dialogRun dlg

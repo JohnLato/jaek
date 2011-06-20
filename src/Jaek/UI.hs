@@ -57,7 +57,7 @@ createMainWindow iProject = do
         bZip  = accumB initialZipper $
                   (const initialZipper <$ eNewDoc)
                   <> (uncurry newSource <$> eNewSource)
-        bDraw = genBDraw bZip bFocus bSize
+        bDraw = genBDraw bRoot bZip bFocus bSize
         (bFocus, eFocChange) = genBFocus (bDraw bView) clicks
         bView = pure $ WaveView 0 (44100*4*60)
     reactimate $ apply ((\d _ -> do

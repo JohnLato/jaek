@@ -8,10 +8,11 @@ where
 
 import Jaek.Tree
 import Diagrams.Prelude
--- import Graphics.Rendering.Diagrams
+import Diagrams.Backend.Cairo
 
 import Data.Tree (Tree (..))
 
+drawTree :: HTree -> AnnDiagram Cairo R2 (First TreePath)
 drawTree = drawTree'
 
 -- adding the name because that way I can retrieve the associated NameMap.
@@ -34,4 +35,4 @@ drawTree' (Node dt childs) =
    (hcat' with {sep = 0.2} (map drawTree' childs) # centerX)
 
 queryFunc :: TreePath -> Any -> First TreePath
-queryFunc path any = if getAny any then First (Just path) else First Nothing
+queryFunc path an = if getAny an then First (Just path) else First Nothing

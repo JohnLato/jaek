@@ -7,6 +7,7 @@ module Jaek.Render (
 where
 
 import Jaek.Base
+import Jaek.Peaks
 import Jaek.Render.Stream
 import Jaek.Render.Tree
 import Jaek.Tree
@@ -36,15 +37,16 @@ getDur :: View -> SampleCount
 getDur (WaveView _ dur) = dur
 getDur _                = 44100    -- default duration, can do better
 
-drawAt zp Nothing    (x,_) _ = toGtkCoords . scale (0.25* fI x) . drawTree $
-  fromZipper zp
-drawAt zp (Just [])  (x,_) _ = toGtkCoords . scale (0.25* fI x) . drawTree $
-  fromZipper zp
-drawAt zp (Just ref) (x,y) view =
+drawAt _root zp Nothing    (x,_) _ =
+  toGtkCoords . scale (0.25* fI x) . drawTree $ fromZipper zp
+drawAt _root zp (Just [])  (x,_) _ =
+  toGtkCoords . scale (0.25* fI x) . drawTree $ fromZipper zp
+drawAt root zp (Just ref) (x,y) view =
   maybe (toGtkCoords . scale (0.25* fI x) . drawTree $ fromZipper zp)
         (\z' -> let d = alignB . vcat
-                        . map (unsafePerformIO . exprPeaks off dur x)
-                        . getExprs $ hole z'
+                        . map (renderPeaks off dur x)
+                        . unsafePerformIO
+                        $ createReadPeaksForNode root z'
                     (_dx,dy) = size2D d
                     yscale = fI y / dy
                 in  d # scaleY yscale )
@@ -55,13 +57,14 @@ drawAt zp (Just ref) (x,y) view =
 
 -- | generate a Behavior Diagram producer
 genBDraw ::
-  Behavior TreeZip
+  Behavior FilePath
+  -> Behavior TreeZip
   -> Behavior (Maybe [Int])
   -> Behavior (Int, Int)
   -> Behavior View
   -> Behavior (AnnDiagram Cairo R2 (First TreePath))
-genBDraw bZip getFocus bsize bview =
-  drawAt <$> bZip <*> getFocus <*> bsize <*> bview
+genBDraw bRoot bZip getFocus bsize bview =
+  drawAt <$> bRoot <*> bZip <*> getFocus <*> bsize <*> bview
 
 -- | Generate (Behavior (IO Focus), Event (IO Focus))
 --  the @Event Focus@ are emitted when the focus changes, and can be used to

@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 module Jaek.Render.Stream (
-  exprPeaks
+  renderPeaks
 )
 
 where
@@ -12,7 +12,6 @@ import           Jaek.Base
 import           Jaek.Peaks
 
 import           Diagrams.Prelude
-import           Data.Iteratee as I
 
 import qualified Data.Vector.Unboxed as U
 import           Data.Int
