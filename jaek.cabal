@@ -28,6 +28,7 @@ Executable jaek
                       ,gtk            >= 0.12    && < 0.13
                       ,iteratee       >= 0.8.4.0 && < 0.9
                       ,monads-tf      >= 0.1     && < 0.2
+                      ,stm            >= 2.2     && < 3.0
                       ,transformers   >= 0.2     && < 0.3
                       ,uniplate       >= 1.6     && < 1.7
                       ,vector         >= 0.7     && < 0.8
@@ -52,4 +53,5 @@ Executable jaek
                       ,Jaek.UI.Dialogs
                       ,Jaek.UI.FrpHandlers
                       ,Jaek.UI.MenuActionHandlers
-  
+                      ,Jaek.UI.Views
+                      ,Jaek.UI.WaveControl
