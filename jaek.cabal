@@ -17,6 +17,7 @@ Executable jaek
   hs-source-dirs:      src
   ghc-options:         -Wall -fno-warn-unused-do-bind -rtsopts
   Build-depends:       base           >= 3       && < 5
+                      ,attoparsec     >= 0.8.0   && < 0.10
                       ,blaze-builder  >= 0.3.0   && < 0.4
                       ,bytestring     >= 0.9.0   && < 0.11
                       ,cairo          >= 0.12    && < 0.13
@@ -32,7 +33,10 @@ Executable jaek
                       ,stm            >= 2.2     && < 3.0
                       ,transformers   >= 0.2     && < 0.3
                       ,uniplate       >= 1.6     && < 1.7
+                      ,utf8-string    >= 0.3.0   && < 0.4
                       ,vector         >= 0.7     && < 0.8
+                      ,attoparsec-binary          >= 0.1.0    && < 0.2
+                      ,attoparsec-iteratee        >= 0.3.0    && < 0.4
                       ,listlike-instances         >= 0.1      && < 1
                       ,MonadCatchIO-transformers  >= 0.2.2.2  && < 0.3
                       ,reactive-banana            >= 0.2.0.1  && < 0.3
@@ -42,6 +46,8 @@ Executable jaek
                       ,Jaek.IO
                       ,Jaek.Peaks
                       ,Jaek.Project
+                      ,Jaek.Project.Parse
+                      ,Jaek.Project.Serialize
                       ,Jaek.Render
                       ,Jaek.Render.Stream
                       ,Jaek.Render.Tree

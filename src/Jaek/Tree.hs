@@ -12,6 +12,7 @@
 -- 
 module Jaek.Tree (
   TreePath
+ ,Node (..)
  ,NodeRef (..)
  ,HTree
  ,TreeZip
