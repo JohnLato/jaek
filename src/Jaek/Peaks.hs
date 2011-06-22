@@ -45,7 +45,7 @@ import           System.IO
 data Peak = Pk {-# UNPACK #-} !Int16 {-# UNPACK #-} !Int16
 
 pksz :: Int
-pksz = 4096
+pksz = 2048
 
 genPeakPath :: FilePath -> HTree -> [FilePath]
 genPeakPath root (Node node _) = map mkFp $ take nc [(0 :: Int) ..]
