@@ -129,12 +129,10 @@ readPeakFile fp = go
       Nothing -> threadDelay 400 >> go
 
 writePkStream :: Handle -> Iteratee [Peak] IO ()
-writePkStream h = do
-  cs <- joinI $ I.take 2048 I.stream2list
-  let bld = fromWriteList
-              (\(Pk l hi) -> writeInt16le l `mappend` writeInt16le hi)
-              cs
-  liftIO $ toByteStringIO (BS.hPut h) bld
+writePkStream h = joinI $ I.group 1024 $ I.mapM_ ifn
+ where
+  ifn xs = toByteStringIO (BS.hPut h) $ fromWriteList (\(Pk l hi) ->
+             writeInt16le l `mappend` writeInt16le hi) xs
   
 -- need an Unboxed instance for this one...
 instance Monoid Peak where
