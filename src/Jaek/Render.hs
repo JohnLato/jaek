@@ -69,7 +69,7 @@ genBFocus :: Behavior (AnnDiagram Cairo R2 (First TreePath))
   -> (Behavior (Maybe [Int]), Event (Maybe [Int]) )
 genBFocus bDraw clicks = (accumB Nothing (const <$> eFocus), eFocus)
  where
-  eFocus = FRP.filter (isJust) $
+  eFocus = FRP.filter isJust $
             apply ((\d clk -> getFirst $ runQuery (query d)
                                                   (P (xPos clk, yPos clk)) )
                               <$> bDraw)

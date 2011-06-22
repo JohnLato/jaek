@@ -16,7 +16,6 @@ import           Data.Iteratee
 import           Data.Attoparsec.Iteratee
 import qualified Data.ByteString.Lazy as L
 import           Blaze.ByteString.Builder (toLazyByteString)
-import           Data.Generics.Uniplate.Zipper
 
 peakDir :: FilePath
 peakDir = "Images"

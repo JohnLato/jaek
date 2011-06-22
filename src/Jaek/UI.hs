@@ -9,12 +9,10 @@ import           Graphics.UI.Gtk
 
 import           Jaek.Base
 import           Jaek.Render
-import           Jaek.Tree
 import           Jaek.UI.Actions
 import           Jaek.UI.Dialogs
 import           Jaek.UI.FrpHandlersCustom
 import           Jaek.UI.MenuActionHandlers
-import           Jaek.UI.Views
 
 import           Reactive.Banana
 import           Diagrams.Backend.Cairo.Gtk

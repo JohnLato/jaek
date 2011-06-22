@@ -87,17 +87,17 @@ genPeakFile :: FilePath -> StreamExpr -> IO ()
 genPeakFile fp expr =
   bracket opener
           closer
-          $ \h -> run =<< (compile expr $ joinI $
+          $ \h -> run =<< compile expr (joinI $
             I.group pksz ><> I.mapStream (V.foldl' updatePeak mempty)
             $ writePkStream h)
  where
   lockfile = fp <.> "lck"
   opener = do
-    putStrLn $ "peak file name: " ++ (fp)
-    h <- openBinaryFile (fp) WriteMode
+    putStrLn $ "peak file name: " ++ fp
+    h <- openBinaryFile fp WriteMode
     putStrLn $ "creating lockfile: " ++ lockfile
     writeFile lockfile ""
-    putStrLn $ "lockfile created"
+    putStrLn "lockfile created"
     return h
   closer h = do
     hClose h

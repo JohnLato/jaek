@@ -15,7 +15,6 @@ import           Jaek.StreamExpr (getDur)
 import           Jaek.Tree
 
 import qualified Data.HashMap.Strict as M
-import           Data.Generics.Uniplate.Zipper
 
 import           Data.List (foldl')
 

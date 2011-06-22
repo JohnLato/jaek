@@ -5,23 +5,21 @@ module Jaek.Base (
  ,ChanNum
  ,TreePath
  ,NodeRef (..)
- ,module Control.Applicative
- ,module Control.Monad
- ,module Control.Monad.Trans.Class
  ,fI
  ,liftIO
  ,ignore
  ,annMaybe
+ ,module X
 )
 
 where
 
 import Data.Data
 
-import Control.Applicative
-import Control.Monad
+import Control.Applicative as X
+import Control.Monad       as X
 import Control.Monad.Error
-import Control.Monad.Trans.Class
+import Control.Monad.Trans.Class as X
 
 type SampleCount = Int
 type ChanNum = Int
