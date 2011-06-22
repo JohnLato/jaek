@@ -16,7 +16,7 @@ module Jaek.Tree (
  ,NodeRef (..)
  ,HTree
  ,TreeZip
- ,initialZipper
+ ,iZip
  ,newSource
  ,goToRef
  ,nodePath
@@ -24,6 +24,7 @@ module Jaek.Tree (
  -- ** user node functions
  ,numChans
  ,getExprs
+ ,liftT
  -- ** user tree manipulation functions
  ,mkCut
  ,mkInsert
@@ -53,6 +54,10 @@ data Node =
  | Mod TreePath [StreamT] [StreamExpr]
  deriving (Eq, Show, Data, Typeable)
 
+-- | lift a "function on a node" to a "function on a tree".
+liftT :: (Node -> a) -> HTree -> a
+liftT f (Node dt _) = f dt
+
 -- | the number of channels in a node
 numChans :: Node -> Int
 numChans Root            = 0
@@ -60,7 +65,7 @@ numChans (Init _ _ chns) = length chns
 numChans (Mod _ _ chns)  = length chns
 
 getExprs  :: HTree -> [StreamExpr]
-getExprs (Node node _) = getExprs' node
+getExprs = liftT getExprs'
 
 getExprs' :: Node -> [StreamExpr]
 getExprs' Root            = []
@@ -89,8 +94,8 @@ instance Uniplate (Tree a) where
 type TreeZip = Zipper HTree HTree
 
 -- |An initial zipper.  Contains only a Root node.
-initialZipper :: TreeZip
-initialZipper = zipper $ Node Root []
+iZip :: TreeZip
+iZip = zipper $ Node Root []
 
 -- | Add a new source (top-level node) from a list of
 -- StreamExprs (one per channel) and a label
@@ -166,10 +171,10 @@ modifyListAt n f xs = let (h,t) = splitAt n xs in h ++ [f (head t)] ++ tail t
 
 mod1 :: String -> [Int] -> (ChanNum -> StreamT) -> TreeZip -> TreeZip
 mod1 nm chns gen zp =
-  let cur@(Node nd _childs) = hole zp
-      streamTs = map gen $ validateChans nd chns
+  let cur = hole zp
+      streamTs = map gen $ liftT validateChans cur chns
       strExpr' pth = Mod pth streamTs
-                     (foldl (applyTransform zp) (getExprs' nd) streamTs)
+                     (foldl (applyTransform zp) (getExprs cur) streamTs)
       (node', pos) = addChild strExpr' cur
   in  case streamTs of
         [] -> zp
@@ -183,10 +188,10 @@ mod2
   -> TreeZip
   -> TreeZip
 mod2 nm chns gen zp =
-  let cur@(Node nd _childs) = hole zp
-      streamTs = map (uncurry gen) $ validateChanP nd chns
+  let cur = hole zp
+      streamTs = map (uncurry gen) $ liftT validateChanP cur chns
       strExpr' pth = Mod pth streamTs
-                     (foldl (applyTransform zp) (getExprs' nd) streamTs)
+                     (foldl (applyTransform zp) (getExprs cur) streamTs)
       (node', pos) = addChild strExpr' cur
   in  case streamTs of
         [] -> zp

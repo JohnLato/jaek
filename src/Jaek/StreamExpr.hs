@@ -16,6 +16,8 @@ module Jaek.StreamExpr (
  ,mix
   -- ** consuming StreamExprs
  ,compile
+ -- ** Utility functions
+ ,getDur
 )
 
 where

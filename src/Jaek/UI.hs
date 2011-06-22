@@ -12,7 +12,9 @@ import           Jaek.Render
 import           Jaek.Tree
 import           Jaek.UI.Actions
 import           Jaek.UI.Dialogs
+import           Jaek.UI.FrpHandlersCustom
 import           Jaek.UI.MenuActionHandlers
+import           Jaek.UI.Views
 
 import           Reactive.Banana
 import           Diagrams.Backend.Cairo.Gtk
@@ -54,15 +56,12 @@ createMainWindow iProject = do
     clicks      <- clickEvents mainArea
     bSize       <- genBSize mainArea
     let bRoot = accumB iProject ((\nm _ -> nm) <$> eNewDoc)
-        bZip  = accumB initialZipper $
-                  (const initialZipper <$ eNewDoc)
-                  <> (uncurry newSource <$> eNewSource)
-        bDraw = genBDraw bRoot bZip bFocus bSize
-        (bFocus, eFocChange) = genBFocus (bDraw bView) clicks
-        bView = pure $ WaveView 0 (44100*4*60)
+        (bZip, bView) = genBZip eNewDoc eNewSource
+        bDraw = genBDraw bRoot bZip bFocus bSize bView
+        (bFocus, eFocChange) = genBFocus bDraw clicks
     reactimate $ apply ((\d _ -> do
                  dw <- widgetGetDrawWindow mainArea
-                 renderToGtk dw d) <$> bDraw bView) eMainExpose
+                 renderToGtk dw d) <$> bDraw) eMainExpose
 
     -- redraw the window when the state is updated by dirtying the widget.
     let redrawF = widgetQueueDraw mainArea

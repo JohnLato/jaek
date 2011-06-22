@@ -41,6 +41,7 @@ Executable jaek
                       ,MonadCatchIO-transformers  >= 0.2.2.2  && < 0.3
                       ,reactive-banana            >= 0.2.0.1  && < 0.3
                       ,sndfile-enumerators        >= 0.10     && < 0.11
+                      ,unordered-containers       >= 0.1      && < 0.2
   Other-modules:       Jaek.Base
                       ,Jaek.Gen
                       ,Jaek.IO
@@ -58,6 +59,7 @@ Executable jaek
                       ,Jaek.UI.Actions
                       ,Jaek.UI.Dialogs
                       ,Jaek.UI.FrpHandlers
+                      ,Jaek.UI.FrpHandlersCustom
                       ,Jaek.UI.MenuActionHandlers
                       ,Jaek.UI.Views
                       ,Jaek.UI.WaveControl
