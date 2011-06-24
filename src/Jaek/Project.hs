@@ -7,7 +7,6 @@ module Jaek.Project (
 
 where
 
-import           Jaek.Base
 import           Jaek.Project.Parse
 import           Jaek.Project.Serialize
 import           Jaek.Tree
@@ -23,7 +22,11 @@ peakDir = "Images"
 -- | only very basic support at the moment, but there really isn't any
 -- project data to serialize yet except the tree.
 writeProject :: FilePath -> TreeZip -> IO ()
-writeProject fp tz = L.writeFile fp . toLazyByteString . build $ fromZipper tz
+writeProject fp tz = do
+  print $ "writing: " ++ show fp
+  L.writeFile fp . toLazyByteString . build $ fromZipper tz
 
-readProject :: FilePath -> IO TreeZip
-readProject fp = zipper <$> fileDriver (parserToIteratee jparse) fp
+readProject :: FilePath -> IO HTree
+readProject fp = do
+  print $ "reading: " ++ show fp
+  fileDriver (parserToIteratee jparse) fp

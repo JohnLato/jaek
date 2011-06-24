@@ -1,7 +1,10 @@
+{-# LANGUAGE TupleSections #-}
+
 module Jaek.UI.Dialogs (
   warnOnException
  ,runInitialMenu
  ,newProjectDialog
+ ,openProjectDialog
 )
 
 where
@@ -9,11 +12,13 @@ where
 import Graphics.UI.Gtk
 import Jaek.Base
 import Jaek.Project
+import Jaek.Tree
 
 import Control.Exception
 import Control.Monad.Trans.Maybe
 
 import System.Directory
+import System.FilePath
 
 warnOnException :: Exception e => e -> IO ()
 warnOnException e = do
@@ -41,7 +46,7 @@ initialMenu = do
   dialogAddButton dlg "Ok"     ResponseOk
   return (dlg, r1, r2)
 
-runInitialMenu :: IO (Maybe String)
+runInitialMenu :: IO (Maybe (String, HTree))
 runInitialMenu = do
   (dlg, r1, _r2) <- initialMenu
   widgetShowAll dlg
@@ -55,10 +60,11 @@ runInitialMenu = do
         newProjectDialog
       else do
         -- load an existing project
-        error "Can't load existing projects yet."
+        widgetDestroy dlg
+        openProjectDialog
     _ -> widgetDestroy dlg >> return Nothing
 
-newProjectDialog :: IO (Maybe String)
+newProjectDialog :: IO (Maybe (String, HTree))
 newProjectDialog = do
   fc <- fileChooserDialogNew (Just "Enter a name for this project")
            Nothing
@@ -74,9 +80,31 @@ newProjectDialog = do
                fp <- MaybeT $ fileChooserGetFilename fc
                liftIO $ setCurrentDirectory fp
                liftIO $ createDirectoryIfMissing False peakDir
-               return fp
+               -- use the directory name as the project name
+               let fname = takeFileName fp <.> "jaek"
+               return (fp </> fname, fromZipper iZip)
       widgetDestroy fc
-      let handleE :: SomeException -> IO (Maybe String)
+      let handleE :: SomeException -> IO (Maybe r)
           handleE e = warnOnException e >> return Nothing
       either handleE return mfp
     _ -> widgetDestroy fc >> return Nothing
+
+
+openProjectDialog :: IO (Maybe (String, HTree))
+openProjectDialog = do
+  fc <- fileChooserDialogNew (Just "Select a Jaek project file")
+           Nothing
+           FileChooserActionOpen
+           []
+  fileChooserSetSelectMultiple fc False
+  dialogAddButton fc stockCancel ResponseCancel
+  dialogAddButton fc stockOk     ResponseOk
+  widgetShowAll fc
+  resp <- dialogRun fc
+  case resp of
+    ResponseOk -> runMaybeT $ do
+      fp <- MaybeT $ fileChooserGetFilename fc
+      liftIO $ widgetDestroy fc
+      (fp, ) <$> liftIO (readProject fp)
+    _ -> widgetDestroy fc >> return Nothing
+

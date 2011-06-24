@@ -5,6 +5,7 @@ module Jaek.UI.Views (
   ,View (..)
   ,ViewChange (..)
   ,iMap
+  ,mapFromTree
   ,updateMap
 )
 
@@ -17,6 +18,7 @@ import           Jaek.Tree
 import qualified Data.HashMap.Strict as M
 
 import           Data.List (foldl')
+import           Data.Tree (flatten)
 
 type ViewMap = M.HashMap TreePath View
 
@@ -37,7 +39,15 @@ updateMap _z NewDoc _m = iMap
 updateMap zp AddSrc mp = addSource zp mp
 
 iMap :: ViewMap
-iMap = M.fromList [([], FullView 1 1)]
+iMap = mapFromTree $ fromZipper iZip
+
+-- | Create a new map with a default view for everything in the tree.
+mapFromTree :: HTree -> ViewMap
+mapFromTree = M.fromList . map uf . flatten
+ where
+  uf Root = ([], FullView 1 1)
+  uf node = (nodePath node,
+             WaveView 0 $ foldl' max 0 . map getDur $ getExprs' node)
 
 addSource :: TreeZip -> ViewMap -> ViewMap
 addSource tz mp = M.insert (liftT nodePath cur) (WaveView 0 srcdur) mp

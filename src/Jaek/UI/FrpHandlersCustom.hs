@@ -18,13 +18,16 @@ import Diagrams.Prelude ((<>))
 -- the viewmap depends on the zipper, the two need to be created
 -- together because there's no guaranteed ordering on behaviors.
 genBZip ::
-  Event String
+  HTree
+  -> Event (String, HTree)
   -> Event (String, [StreamExpr])
   -> (Behavior TreeZip, Behavior ViewMap)
-genBZip eNewDoc eNewSource = (fst <$> bPair, snd <$> bPair)
+genBZip iTree eNewDoc eNewSource = (fst <$> bPair, snd <$> bPair)
  where
-  bPair = accumB (iZip, iMap) $
-              ((\(_z,mp) -> (iZip, updateMap iZip NewDoc mp)) <$ eNewDoc)
+  bPair = accumB (zipper iTree, mapFromTree iTree) $
+              ((\(_rt,ht) (_z,mp) ->
+                  let nz = zipper ht
+                  in (nz, updateMap nz NewDoc mp)) <$> eNewDoc)
            <> ((\(n1,n2) (zp,mp) ->
                  let z' = newSource n1 n2 zp
                  in (z', updateMap z' AddSrc mp)) <$> eNewSource)

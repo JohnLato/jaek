@@ -8,7 +8,9 @@ where
 import           Graphics.UI.Gtk
 
 import           Jaek.Base
+import           Jaek.Project
 import           Jaek.Render
+import           Jaek.Tree (HTree)
 import           Jaek.UI.Actions
 import           Jaek.UI.Dialogs
 import           Jaek.UI.FrpHandlersCustom
@@ -18,20 +20,24 @@ import           Reactive.Banana
 import           Diagrams.Backend.Cairo.Gtk
 import           Diagrams.Prelude hiding (apply)
 
+import           System.FilePath
+
 uiDef :: String
 uiDef =
   "<ui>\
   \  <menubar>\
   \    <menu name=\"File\" action=\"FileAction\">\
   \      <menuitem name=\"New\" action=\"NewAction\" />\
+  \      <menuitem name=\"Open\" action=\"OpenAction\" />\
+  \      <menuitem name=\"Save\" action=\"SaveAction\" />\
   \      <menuitem name=\"Import\" action=\"ImportAction\" />\
   \      <menuitem name=\"Close\" action=\"QuitAction\" />\
   \    </menu>\
   \  </menubar>\
   \</ui>"
 
-createMainWindow :: String -> IO Window
-createMainWindow iProject = do
+createMainWindow :: String -> HTree -> IO Window
+createMainWindow iProject iTree = do
   win <- windowNew
 
   standardGroup <- actionGroupNew "standard"
@@ -49,12 +55,16 @@ createMainWindow iProject = do
 
   prepareEvents $ do
     eNewDoc     <- newHandler standardGroup win
+    eOpenDoc    <- openHandler standardGroup win
+    eSaveDoc    <- saveHandler standardGroup win
     eNewSource  <- importHandler standardGroup win
     eMainExpose <- exposeEvents mainArea
     clicks      <- clickEvents mainArea
     bSize       <- genBSize mainArea
-    let bRoot = accumB iProject ((\nm _ -> nm) <$> eNewDoc)
-        (bZip, bView) = genBZip eNewDoc eNewSource
+    let bFName = accumB (iProject) (const . fst <$> (eNewDoc <> eOpenDoc))
+        (bRoot, bProjName) = (takeDirectory <$> bFName,
+                              takeFileName  <$> bFName)
+        (bZip, bView) = genBZip iTree (eNewDoc <> eOpenDoc) eNewSource
         bDraw = genBDraw bRoot bZip bFocus bSize bView
         (bFocus, eFocChange) = genBFocus bDraw clicks
     reactimate $ apply ((\d _ -> do
@@ -64,8 +74,13 @@ createMainWindow iProject = do
     -- redraw the window when the state is updated by dirtying the widget.
     let redrawF = widgetQueueDraw mainArea
     reactimate $ ( redrawF <$ eNewDoc)
+              <> ( redrawF <$ eOpenDoc)
               <> ( redrawF <$ eNewSource)
               <> ( redrawF <$ eFocChange)
+
+    -- save the document when requested
+    reactimate $ apply ((\fp tz () -> writeProject fp tz) <$> bFName <*> bZip)
+                       eSaveDoc
 
   ui <- uiManagerNew
   ignore $ uiManagerAddUiFromString ui uiDef

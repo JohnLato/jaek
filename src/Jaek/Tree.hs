@@ -24,6 +24,7 @@ module Jaek.Tree (
  -- ** user node functions
  ,numChans
  ,getExprs
+ ,getExprs'
  ,liftT
  -- ** user tree manipulation functions
  ,mkCut
