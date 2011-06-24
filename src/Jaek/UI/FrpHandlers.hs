@@ -104,7 +104,7 @@ genBSize :: WidgetClass w => w -> Prepare (Behavior (Int, Int))
 genBSize widget = do
    eSize <- e
    sz <- liftIO $ widgetGetSize widget
-   return $ accumB sz (const <$> eSize)
+   return $ stepper sz eSize
  where
    e = fromAddHandler $ \k -> ignore $ on widget sizeAllocate $
      \(Rectangle _ _ width height) -> k (width,height)

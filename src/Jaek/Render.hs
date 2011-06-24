@@ -67,7 +67,7 @@ genBDraw bRoot bZip getFocus bsize bview =
 genBFocus :: Behavior (AnnDiagram Cairo R2 (First TreePath))
   -> Event ClickEvent
   -> (Behavior (Maybe [Int]), Event (Maybe [Int]) )
-genBFocus bDraw clicks = (accumB Nothing (const <$> eFocus), eFocus)
+genBFocus bDraw clicks = (stepper Nothing eFocus, eFocus)
  where
   eFocus = FRP.filter isJust $
             apply ((\d clk -> getFirst $ runQuery (query d)
