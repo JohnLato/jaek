@@ -6,12 +6,16 @@
 module Jaek.UI.FrpHandlers (
   ClickType (..)
  ,ClickEvent (..)
+ ,EventModifier (..)
+ ,DragEvent (..)
  ,mapFilterE
  ,exposeEvents
  ,clickEvents
  ,releaseEvents
+ ,motionEvents
  ,dragEvents
  ,genBSize
+ ,genBDrag
 )
 
 where
@@ -19,7 +23,7 @@ where
 import Graphics.UI.Gtk
 import Jaek.Base
 import Reactive.Banana as B
-import Data.Bits
+import Diagrams.Prelude ((<>))
 import Data.Data
 
 -- | Encapsulate information about a click
@@ -37,6 +41,47 @@ data DragEvent  = DragE {
  ,yDragEnd  :: !Double
  }
  deriving (Eq, Show, Data, Typeable)
+
+data EventModifier
+  = ShiftE
+  | LockE
+  | ControlE
+  | AltE
+  | Alt2E
+  | Alt3E
+  | Alt4E
+  | Alt5E
+  | Button1E
+  | Button2E
+  | Button3E
+  | Button4E
+  | Button5E
+  | SuperE
+  | HyperE
+  | MetaE
+  | ReleaseE
+  | ModifierMaskE
+  deriving (Eq, Ord, Show, Data, Typeable)
+
+fromModifier :: Modifier -> EventModifier
+fromModifier Shift = ShiftE
+fromModifier Lock  = LockE
+fromModifier Control = ControlE
+fromModifier Alt     = AltE
+fromModifier Alt2    = Alt2E
+fromModifier Alt3    = Alt3E
+fromModifier Alt4    = Alt4E
+fromModifier Alt5    = Alt5E
+fromModifier Button1 = Button1E
+fromModifier Button2 = Button2E
+fromModifier Button3 = Button3E
+fromModifier Button4 = Button4E
+fromModifier Button5 = Button5E
+fromModifier Super   = SuperE
+fromModifier Hyper   = HyperE
+fromModifier Meta    = MetaE
+fromModifier Release = ReleaseE
+fromModifier ModifierMask = ModifierMaskE
 
 -- | Check if a drag is valid, i.e. start and end points differ
 checkDrag :: DragEvent -> Bool
@@ -87,6 +132,16 @@ releaseEvents widget =
     (x,y) <- eventCoordinates
     liftIO $ k $ ClickE (click2ClickType click) x y
 
+motionEvents ::
+  WidgetClass w
+  => w
+  -> Prepare (Event ([EventModifier], Double, Double))
+motionEvents widget =
+ fromAddHandler $ \k -> ignore $ on widget motionNotifyEvent $ tryEvent $ do
+    (x,y) <- eventCoordinates
+    mods  <- eventModifier
+    liftIO $ k (fmap fromModifier mods, x, y)
+
 -- | Generate drag events.  The input Event ClickEvent should have both clicks
 -- and releases, such as
 -- 
@@ -96,6 +151,25 @@ releaseEvents widget =
 dragEvents :: Event ClickEvent -> Event DragEvent
 dragEvents es = B.filter checkDrag . mapFilterE fromAcc fullAcc $
   accumE None (addClick <$> es)
+
+-- | generate a behavior of the current drag event.  This should work
+-- for any EventMask, even if PointerMotionMask is on, because it filters
+-- all events when a button isn't pressed.
+genBDrag ::
+  Event ClickEvent
+  -> Event ([EventModifier], Double, Double) 
+  -> Behavior (Maybe DragEvent)
+genBDrag clicks motions = accumB Nothing $ (cf' <$> clicks) <> (mf <$> filtms)
+ where
+  cf (ClickE ReleaseC _ _) = False
+  cf _                     = True
+  inPress = stepper False $ cf <$> clicks
+  filtms = filterApply (const <$> inPress) motions
+  cf' (ClickE ReleaseC x y) (Just (DragE c _ _)) = Just $ DragE c x y
+  cf' c@(ClickE _ x y)      _                    = Just $ DragE c x y
+  cf' _                     _                    = Nothing
+  mf (_,x,y) (Just (DragE c _ _))                = Just $ DragE c x y
+  mf _       _                                   = Nothing
 
 -- | Create a behavior of the size of a widget.
 -- 

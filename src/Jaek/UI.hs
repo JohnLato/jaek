@@ -52,6 +52,8 @@ createMainWindow iProject iTree = do
   mainArea <- drawingAreaNew
 
   -- add FRP handler stuff...
+  widgetAddEvents mainArea
+    [ButtonPressMask, ButtonReleaseMask, ButtonMotionMask]
 
   prepareEvents $ do
     eNewDoc     <- newHandler standardGroup win
