@@ -64,11 +64,16 @@ genBDraw bRoot bZip getFocus bsize bview =
 -- | Generate (Behavior (IO Focus), Event (IO Focus))
 --  the @Event Focus@ are emitted when the focus changes, and can be used to
 --  trigger screen refreshes
+--  it's important to only trigger focus events when the focus actually changes
+--  presently I filter out non-changing focus events, however it would
+--  probably be more efficient to be more selective with the input signals.
 genBFocus :: Behavior (AnnDiagram Cairo R2 (First TreePath))
   -> Event ClickEvent
   -> (Behavior (Maybe [Int]), Event (Maybe [Int]) )
-genBFocus bDraw clicks = (stepper Nothing eFocus, eFocus)
+genBFocus bDraw clicks = (beh, eFilt)
  where
+  beh   = stepper Nothing eFilt
+  eFilt  = filterApply ((\old new -> old /= new) <$> beh) eFocus
   eFocus = FRP.filter isJust $
             apply ((\d clk -> getFirst $ runQuery (query d)
                                                   (P (xPos clk, yPos clk)) )
