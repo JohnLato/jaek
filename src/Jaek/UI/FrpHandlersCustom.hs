@@ -2,6 +2,8 @@
 -- into a separate package.
 module Jaek.UI.FrpHandlersCustom (
   genBZip
+ ,bCurSelection
+ ,clickIsAdditive
 )
 
 where
@@ -10,6 +12,7 @@ import Jaek.Base
 import Jaek.StreamExpr
 import Jaek.Tree
 import Jaek.UI.Views
+import Jaek.UI.FrpHandlers
 
 import Reactive.Banana
 import Diagrams.Prelude ((<>))
@@ -31,3 +34,20 @@ genBZip iTree eNewDoc eNewSource = (fst <$> bPair, snd <$> bPair)
            <> ((\(n1,n2) (zp,mp) ->
                  let z' = newSource n1 n2 zp
                  in (z', updateMap z' AddSrc mp)) <$> eNewSource)
+
+-- | check if a drag event should be added to current selection (shift-drag)
+-- or replace it.
+dragIsAdditive :: DragEvent -> Bool
+dragIsAdditive = clickIsAdditive . dragStart
+
+clickIsAdditive :: ClickEvent -> Bool
+clickIsAdditive = any (== ShiftE) . clickMods
+
+bCurSelection :: Event DragEvent -> Event () -> Behavior [DragEvent]
+bCurSelection eDrags eClear =
+  accumB [] $ (dragAcc <$> eDrags) <> (clearAcc <$> eClear)
+ where
+  dragAcc drag acc
+    | dragIsAdditive drag = drag:acc
+    | otherwise           = [drag]
+  clearAcc () _           = []

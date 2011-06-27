@@ -15,8 +15,9 @@ import           Jaek.UI.Actions
 import           Jaek.UI.Dialogs
 import           Jaek.UI.FrpHandlersCustom
 import           Jaek.UI.MenuActionHandlers
+import           Jaek.UI.Render
 
-import           Reactive.Banana
+import           Reactive.Banana as FRP
 import           Diagrams.Backend.Cairo.Gtk
 import           Diagrams.Prelude hiding (apply)
 
@@ -63,15 +64,21 @@ createMainWindow iProject iTree = do
     eMainExpose <- exposeEvents mainArea
     clicks      <- clickEvents mainArea
     bSize       <- genBSize mainArea
-    let bFName = accumB (iProject) (const . fst <$> (eNewDoc <> eOpenDoc))
+    eRelease    <- releaseEvents mainArea
+    motions     <- motionEvents mainArea
+    let drags = dragEvents (clicks <> eRelease)
+        bS1 = bCurSelection drags
+                            (() <$ FRP.filter (not . clickIsAdditive) clicks)
+        bS2 = genBDrag (clicks <> eRelease) motions
+        bSelForDraw = (\xs mx -> maybe xs (\x -> x:xs) mx) <$> bS1 <*> bS2
+        bFName = stepper iProject (fst <$> (eNewDoc <> eOpenDoc))
         (bRoot, bProjName) = (takeDirectory <$> bFName,
                               takeFileName  <$> bFName)
         (bZip, bView) = genBZip iTree (eNewDoc <> eOpenDoc) eNewSource
         bDraw = genBDraw bRoot bZip bFocus bSize bView
         (bFocus, eFocChange) = genBFocus bDraw clicks
-    reactimate $ apply ((\d _ -> do
-                 dw <- widgetGetDrawWindow mainArea
-                 renderToGtk dw d) <$> bDraw) eMainExpose
+    reactimate $ apply (drawOnExpose mainArea <$> bDraw <*> bSelForDraw)
+                       eMainExpose
 
     -- redraw the window when the state is updated by dirtying the widget.
     let redrawF = widgetQueueDraw mainArea
@@ -79,6 +86,7 @@ createMainWindow iProject iTree = do
               <> ( redrawF <$ eOpenDoc)
               <> ( redrawF <$ eNewSource)
               <> ( redrawF <$ eFocChange)
+              <> ( redrawF <$ motions)
 
     -- save the document when requested
     reactimate $ apply ((\fp tz () -> writeProject fp tz) <$> bFName <*> bZip)

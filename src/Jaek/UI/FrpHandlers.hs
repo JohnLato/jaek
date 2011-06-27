@@ -29,6 +29,7 @@ import Data.Data
 -- | Encapsulate information about a click
 data ClickEvent = ClickE {
   clickType :: !ClickType
+ ,clickMods :: [EventModifier]
  ,xPos :: !Double
  ,yPos :: !Double
  }
@@ -85,7 +86,7 @@ fromModifier ModifierMask = ModifierMaskE
 
 -- | Check if a drag is valid, i.e. start and end points differ
 checkDrag :: DragEvent -> Bool
-checkDrag (DragE (ClickE _ cx cy) dx dy) = (cx /= dx) || (cy /= dy)
+checkDrag (DragE (ClickE _ _ cx cy) dx dy) = (cx /= dx) || (cy /= dy)
 
 data ClickType = SingleC | DoubleC | TripleC | ReleaseC
   deriving (Eq, Show, Enum, Ord, Data, Typeable)
@@ -93,8 +94,8 @@ data ClickType = SingleC | DoubleC | TripleC | ReleaseC
 data DragAcc = None | Start ClickEvent | Full DragEvent
 
 addClick :: ClickEvent -> DragAcc -> DragAcc
-addClick (ClickE ReleaseC x y) (Start e) = Full $ DragE e x y
-addClick (ClickE ReleaseC _ _) _ = None
+addClick (ClickE ReleaseC _ x y) (Start e) = Full $ DragE e x y
+addClick (ClickE ReleaseC _ _ _) _ = None
 addClick e _ = Start e
 
 fullAcc :: DragAcc -> Bool
@@ -123,14 +124,16 @@ clickEvents widget =
   fromAddHandler $ \k -> ignore $ on widget buttonPressEvent $ tryEvent $ do
     click <- eventClick
     (x,y) <- eventCoordinates
-    liftIO $ k $ ClickE (click2ClickType click) x y
+    mods  <- eventModifier
+    liftIO $ k $ ClickE (click2ClickType click) (map fromModifier mods) x y
 
 releaseEvents :: WidgetClass w => w -> Prepare (Event ClickEvent)
 releaseEvents widget =
   fromAddHandler $ \k -> ignore $ on widget buttonReleaseEvent $ tryEvent $ do
     click <- eventClick
     (x,y) <- eventCoordinates
-    liftIO $ k $ ClickE (click2ClickType click) x y
+    mods  <- eventModifier
+    liftIO $ k $ ClickE (click2ClickType click) (map fromModifier mods) x y
 
 motionEvents ::
   WidgetClass w
@@ -161,15 +164,15 @@ genBDrag ::
   -> Behavior (Maybe DragEvent)
 genBDrag clicks motions = accumB Nothing $ (cf' <$> clicks) <> (mf <$> filtms)
  where
-  cf (ClickE ReleaseC _ _) = False
+  cf (ClickE ReleaseC _ _ _) = False
   cf _                     = True
   inPress = stepper False $ cf <$> clicks
   filtms = filterApply (const <$> inPress) motions
-  cf' (ClickE ReleaseC x y) (Just (DragE c _ _)) = Just $ DragE c x y
-  cf' c@(ClickE _ x y)      _                    = Just $ DragE c x y
-  cf' _                     _                    = Nothing
-  mf (_,x,y) (Just (DragE c _ _))                = Just $ DragE c x y
-  mf _       _                                   = Nothing
+  cf' (ClickE ReleaseC _ x y) (Just (DragE c _ _)) = Just $ DragE c x y
+  cf' c@(ClickE _ _ x y)      _                    = Just $ DragE c x y
+  cf' _                       _                    = Nothing
+  mf (_,x,y)                  (Just (DragE c _ _)) = Just $ DragE c x y
+  mf _                        _                    = Nothing
 
 -- | Create a behavior of the size of a widget.
 -- 
