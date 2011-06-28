@@ -16,7 +16,7 @@ Executable jaek
   main-is:             Jaek.hs
   hs-source-dirs:      src
   ghc-options:         -Wall -fno-warn-unused-do-bind -fno-warn-orphans
-                       -rtsopts -threaded
+                       -rtsopts -threaded -with-rtsopts=-N
   Build-depends:       base           >= 3       && < 5
                       ,attoparsec     >= 0.8.0   && < 0.10
                       ,blaze-builder  >= 0.3.0   && < 0.4
