@@ -20,6 +20,7 @@ import           Jaek.UI.Views
 import           Reactive.Banana as FRP
 import           Diagrams.Prelude hiding (apply)
 
+import           Control.Concurrent.STM
 import           System.FilePath
 
 uiDef :: String
@@ -50,6 +51,7 @@ createMainWindow iProject iTree = do
 
   -- create new widgets
   mainArea <- drawingAreaNew
+  drawRef  <- newTVarIO (mempty, (FullView 0 0), Nothing)
 
   -- add FRP handler stuff...
   widgetAddEvents mainArea
@@ -76,7 +78,8 @@ createMainWindow iProject iTree = do
         (bZip, bView) = genBZip iTree (eNewDoc <> eOpenDoc) eNewSource
         bDraw = genBDraw bRoot bZip bFocus bSize bView
         (bFocus, eFocChange) = genBFocus bDraw clicks
-    reactimate $ apply (drawOnExpose mainArea <$> bDraw <*> bSelForDraw)
+    reactimate $ apply (drawOnExpose mainArea drawRef <$> bDraw
+                          <*> bView <*> bFocus <*> bSelForDraw)
                        eMainExpose
 
     -- redraw the window when the state is updated by dirtying the widget.

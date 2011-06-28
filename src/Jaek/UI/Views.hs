@@ -4,6 +4,7 @@ module Jaek.UI.Views (
    ViewMap
   ,View (..)
   ,ViewChange (..)
+  ,isWaveView
   ,iMap
   ,mapFromTree
   ,updateMap
@@ -32,6 +33,10 @@ data View =
     FullView !Double !Double           -- ^ xScale, yScale
   | WaveView !SampleCount !SampleCount -- ^ streamOff, streamDur
   deriving (Eq, Show)
+
+isWaveView :: View -> Bool
+isWaveView (WaveView _ _) = True
+isWaveView _              = False
 
 updateMap :: TreeZip -> ViewChange -> ViewMap -> ViewMap
 updateMap _z NewDoc _m = iMap
