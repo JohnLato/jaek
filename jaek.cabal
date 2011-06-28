@@ -42,7 +42,7 @@ Executable jaek
                       ,attoparsec-iteratee        >= 0.3.0    && < 0.4
                       ,listlike-instances         >= 0.1      && < 1
                       ,MonadCatchIO-transformers  >= 0.2.2.2  && < 0.3
-                      ,reactive-banana            >= 0.2.0.1  && < 0.3
+                      ,reactive-banana            >= 0.3      && < 0.4
                       ,sndfile-enumerators        >= 0.10     && < 0.11
                       ,unordered-containers       >= 0.1      && < 0.2
   Other-modules:       Jaek.Base

@@ -33,6 +33,8 @@ getDur :: View -> SampleCount
 getDur (WaveView _ dur) = dur
 getDur _                = 44100    -- default duration, can do better
 
+-- for some reason the drawing isn't being shared properly.  I'm not sure if
+-- it's Haskell not storing a function or Reactive.Banana.
 drawAt _root zp Nothing    (x,_) _ =
   toGtkCoords . scale (0.25* fI x) . drawTree $ fromZipper zp
 drawAt _root zp (Just [])  (x,_) _ =
@@ -74,7 +76,7 @@ genBFocus bDraw clicks = (beh, eFilt)
  where
   beh   = stepper Nothing eFilt
   eFilt  = filterApply ((\old new -> old /= new) <$> beh) eFocus
-  eFocus = FRP.filter isJust $
+  eFocus = filterE isJust $
             apply ((\d clk -> getFirst $ runQuery (query d)
                                                   (P (xPos clk, yPos clk)) )
                               <$> bDraw)

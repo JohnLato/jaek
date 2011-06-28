@@ -113,23 +113,29 @@ click2ClickType TripleClick = TripleC
 click2ClickType ReleaseClick = ReleaseC
 
 mapFilterE :: (a -> b) -> (a -> Bool) -> Event a -> Event b
-mapFilterE f p e = f <$> B.filter p e
+mapFilterE f p e = f <$> filterE p e
 
-exposeEvents :: WidgetClass w => w -> Prepare (Event ())
-exposeEvents widget =
-  fromAddHandler $ \k -> ignore $ widget `onExpose` const (k () >> return True)
+event1 :: Typeable a => ((a -> IO ()) -> IO ()) -> NetworkDescription (Event a)
+event1 k = do
+  (addHandler, runHandlers) <- liftIO newAddHandler
+  liftIO $ k runHandlers
+  fromAddHandler addHandler
 
-clickEvents :: WidgetClass w => w -> Prepare (Event ClickEvent)
-clickEvents widget =
-  fromAddHandler $ \k -> ignore $ on widget buttonPressEvent $ tryEvent $ do
+exposeEvents :: WidgetClass w => w -> NetworkDescription (Event ())
+exposeEvents widget = event1 $ \k ->
+  ignore $ widget `onExpose` const (k () >> return True)
+
+clickEvents :: WidgetClass w => w -> NetworkDescription (Event ClickEvent)
+clickEvents widget = event1 $ \k ->
+  ignore $ on widget buttonPressEvent $ tryEvent $ do
     click <- eventClick
     (x,y) <- eventCoordinates
     mods  <- eventModifier
     liftIO $ k $ ClickE (click2ClickType click) (map fromModifier mods) x y
 
-releaseEvents :: WidgetClass w => w -> Prepare (Event ClickEvent)
-releaseEvents widget =
-  fromAddHandler $ \k -> ignore $ on widget buttonReleaseEvent $ tryEvent $ do
+releaseEvents :: WidgetClass w => w -> NetworkDescription (Event ClickEvent)
+releaseEvents widget = event1 $ \k ->
+  ignore $ on widget buttonReleaseEvent $ tryEvent $ do
     click <- eventClick
     (x,y) <- eventCoordinates
     mods  <- eventModifier
@@ -138,9 +144,9 @@ releaseEvents widget =
 motionEvents ::
   WidgetClass w
   => w
-  -> Prepare (Event ([EventModifier], Double, Double))
-motionEvents widget =
- fromAddHandler $ \k -> ignore $ on widget motionNotifyEvent $ tryEvent $ do
+  -> NetworkDescription (Event ([EventModifier], Double, Double))
+motionEvents widget = event1 $ \k ->
+ ignore $ on widget motionNotifyEvent $ tryEvent $ do
     (x,y) <- eventCoordinates
     mods  <- eventModifier
     liftIO $ k (fmap fromModifier mods, x, y)
@@ -152,7 +158,7 @@ motionEvents widget =
 -- > releases <- releaseEvents w
 -- > let drags = dragEvents $ clicks <> releases
 dragEvents :: Event ClickEvent -> Event DragEvent
-dragEvents es = B.filter checkDrag . mapFilterE fromAcc fullAcc $
+dragEvents es = filterE checkDrag . mapFilterE fromAcc fullAcc $
   accumE None (addClick <$> es)
 
 -- | generate a behavior of the current drag event.  This should work
@@ -176,12 +182,12 @@ genBDrag clicks motions = accumB Nothing $ (cf' <$> clicks) <> (mf <$> filtms)
 
 -- | Create a behavior of the size of a widget.
 -- 
--- In @Prepare@ because this is uses an internal @Event@.
-genBSize :: WidgetClass w => w -> Prepare (Behavior (Int, Int))
+-- In @NetworkDescription@ because this is uses an internal @Event@.
+genBSize :: WidgetClass w => w -> NetworkDescription (Behavior (Int, Int))
 genBSize widget = do
    eSize <- e
    sz <- liftIO $ widgetGetSize widget
    return $ stepper sz eSize
  where
-   e = fromAddHandler $ \k -> ignore $ on widget sizeAllocate $
+   e = event1 $ \k -> ignore $ on widget sizeAllocate $
      \(Rectangle _ _ width height) -> k (width,height)

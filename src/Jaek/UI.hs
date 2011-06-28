@@ -18,7 +18,6 @@ import           Jaek.UI.MenuActionHandlers
 import           Jaek.UI.Render
 
 import           Reactive.Banana as FRP
-import           Diagrams.Backend.Cairo.Gtk
 import           Diagrams.Prelude hiding (apply)
 
 import           System.FilePath
@@ -56,7 +55,7 @@ createMainWindow iProject iTree = do
   widgetAddEvents mainArea
     [ButtonPressMask, ButtonReleaseMask, ButtonMotionMask]
 
-  prepareEvents $ do
+  network <- FRP.compile $ do
     eNewDoc     <- newHandler standardGroup win
     eOpenDoc    <- openHandler standardGroup win
     eSaveDoc    <- saveHandler standardGroup win
@@ -68,7 +67,7 @@ createMainWindow iProject iTree = do
     motions     <- motionEvents mainArea
     let drags = dragEvents (clicks <> eRelease)
         bS1 = bCurSelection drags
-                            (() <$ FRP.filter (not . clickIsAdditive) clicks)
+                            (() <$ filterE (not . clickIsAdditive) clicks)
         bS2 = genBDrag (clicks <> eRelease) motions
         bSelForDraw = (\xs mx -> maybe xs (\x -> x:xs) mx) <$> bS1 <*> bS2
         bFName = stepper iProject (fst <$> (eNewDoc <> eOpenDoc))
@@ -92,6 +91,7 @@ createMainWindow iProject iTree = do
     reactimate $ apply ((\fp tz () -> writeProject fp tz) <$> bFName <*> bZip)
                        eSaveDoc
 
+  FRP.run network
   ui <- uiManagerNew
   ignore $ uiManagerAddUiFromString ui uiDef
   uiManagerInsertActionGroup ui standardGroup 0

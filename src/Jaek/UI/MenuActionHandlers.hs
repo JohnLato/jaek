@@ -41,34 +41,35 @@ quitHandler win act = on act actionActivated $ widgetDestroy win
 -- FRP handlers
 -- these create FRP Events rather than doing basic stuff.
 
-maybeEvent0 :: Typeable a => Action -> IO (Maybe a) -> Prepare (Event a)
-maybeEvent0 act ops = fromAddHandler $ \k -> do
-   on act actionActivated $ ops >>= maybe (return ()) k
-   return ()
+maybeEvent0 :: Typeable a => Action -> IO (Maybe a) -> NetworkDescription (Event a)
+maybeEvent0 act ops = do
+   (addHandler, runHandlers) <- liftIO newAddHandler
+   liftIO $ on act actionActivated $ ops >>= maybe (return ()) runHandlers
+   fromAddHandler addHandler
 
 -- |create a new document
-newHandler :: ActionGroup -> Window -> Prepare (Event (String, HTree))
+newHandler :: ActionGroup -> Window -> NetworkDescription (Event (String, HTree))
 newHandler actGrp _win = do
   act <- liftIO newAction
   liftIO $ actionGroupAddActionWithAccel actGrp act Nothing
   maybeEvent0 act newProjectDialog
 
 -- | Load a saved project file
-openHandler :: ActionGroup -> Window -> Prepare (Event (String, HTree))
+openHandler :: ActionGroup -> Window -> NetworkDescription (Event (String, HTree))
 openHandler actGrp _win = do
   act <- liftIO openAction
   liftIO $ actionGroupAddActionWithAccel actGrp act Nothing
   maybeEvent0 act openProjectDialog
 
 -- | Save the current project file
-saveHandler :: ActionGroup -> Window -> Prepare (Event ())
+saveHandler :: ActionGroup -> Window -> NetworkDescription (Event ())
 saveHandler actGrp _win = do
   act <- liftIO saveAction
   liftIO $ actionGroupAddActionWithAccel actGrp act Nothing
   maybeEvent0 act $ return $ Just ()
 
 -- |import a new audio source
-importHandler :: ActionGroup -> Window -> Prepare (Event (String, [StreamExpr]))
+importHandler :: ActionGroup -> Window -> NetworkDescription (Event (String, [StreamExpr]))
 importHandler actGrp _win = do
   act <- liftIO importAction
   liftIO $ actionGroupAddActionWithAccel actGrp act Nothing
