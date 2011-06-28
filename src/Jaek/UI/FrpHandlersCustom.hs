@@ -1,7 +1,10 @@
 -- | Frp handlers specific to this program.  Will likely not be split
 -- into a separate package.
 module Jaek.UI.FrpHandlersCustom (
-  genBZip
+  Focus
+ ,genBZip
+ ,genBDraw
+ ,genBFocus
  ,bCurSelection
  ,clickIsAdditive
 )
@@ -9,13 +12,17 @@ module Jaek.UI.FrpHandlersCustom (
 where
 
 import Jaek.Base
+import Jaek.Render
 import Jaek.StreamExpr
 import Jaek.Tree
 import Jaek.UI.Views
 import Jaek.UI.FrpHandlers
 
-import Reactive.Banana
-import Diagrams.Prelude ((<>))
+import Reactive.Banana  as FRP
+import Diagrams.Prelude as D
+import Diagrams.Backend.Cairo
+
+import Data.Maybe
 
 -- | generate the behavior of the zipper and the viewmap.  Since
 -- the viewmap depends on the zipper, the two need to be created
@@ -51,3 +58,37 @@ bCurSelection eDrags eClear =
     | dragIsAdditive drag = drag:acc
     | otherwise           = [drag]
   clearAcc () _           = []
+
+type Focus = Maybe [Int]
+
+-- | Generate (Behavior (IO Focus), Event (IO Focus))
+--  the @Event Focus@ are emitted when the focus changes, and can be used to
+--  trigger screen refreshes
+--  it's important to only trigger focus events when the focus actually changes
+--  presently I filter out non-changing focus events, however it would
+--  probably be more efficient to be more selective with the input signals.
+genBFocus :: Behavior (AnnDiagram Cairo R2 (First TreePath))
+  -> Event ClickEvent
+  -> (Behavior Focus, Event Focus )
+genBFocus bDraw clicks = (beh, eFilt)
+ where
+  beh   = stepper Nothing eFilt
+  eFilt  = filterApply ((\old new -> old /= new) <$> beh) eFocus
+  eFocus = filterE isJust $
+            FRP.apply ((\d clk -> getFirst $ runQuery (query d)
+                                                      (P (xPos clk, yPos clk)) )
+                                  <$> bDraw)
+                       clicks
+
+-- | generate a Behavior Diagram producer
+genBDraw ::
+  Behavior FilePath
+  -> Behavior TreeZip
+  -> Behavior Focus
+  -> Behavior (Int, Int)
+  -> Behavior ViewMap
+  -> Behavior (AnnDiagram Cairo R2 (First TreePath))
+genBDraw bRoot bZip getFocus bsize bview =
+  drawAt <$> bRoot <*> bZip <*> getFocus <*> bsize <*> bview
+
+

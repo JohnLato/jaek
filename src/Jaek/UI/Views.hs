@@ -33,7 +33,6 @@ data View =
   | WaveView !SampleCount !SampleCount -- ^ streamOff, streamDur
   deriving (Eq, Show)
 
-
 updateMap :: TreeZip -> ViewChange -> ViewMap -> ViewMap
 updateMap _z NewDoc _m = iMap
 updateMap zp AddSrc mp = addSource zp mp

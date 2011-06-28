@@ -9,6 +9,9 @@ where
 import Graphics.UI.Gtk
 import Jaek.Base
 import Jaek.UI.FrpHandlers
+import Jaek.UI.FrpHandlersCustom
+import Jaek.UI.Views
+
 import Diagrams.Prelude
 import Diagrams.Backend.Cairo.Gtk
 import Diagrams.Backend.Cairo
