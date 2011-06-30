@@ -1,13 +1,13 @@
-{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE TypeOperators #-}
 
 -- | general GTK FRP functions.  These may be split into a separate
 -- module in the future...
 
 module Jaek.UI.FrpHandlers (
-  ClickType (..)
- ,ClickEvent (..)
- ,EventModifier (..)
- ,DragEvent (..)
+  xyClick
+ ,xyStart
+ ,xyEnd
+ ,dragYs
  ,mapFilterE
  ,exposeEvents
  ,clickEvents
@@ -16,82 +16,37 @@ module Jaek.UI.FrpHandlers (
  ,dragEvents
  ,genBSize
  ,genBDrag
+ ,module F
 )
 
 where
 
+import Prelude hiding ((.))
+
 import Graphics.UI.Gtk
 import Jaek.Base
+import Jaek.UI.FrpTypes as F
 import Reactive.Banana as B
 import Diagrams.Prelude ((<>))
-import Data.Data
 
--- | Encapsulate information about a click
-data ClickEvent = ClickE {
-  clickType :: !ClickType
- ,clickMods :: [EventModifier]
- ,xPos :: !Double
- ,yPos :: !Double
- }
- deriving (Eq, Show, Ord, Data, Typeable)
+import Data.Record.Label
 
--- | Encapsulate data about drag events
-data DragEvent  = DragE {
-  dragStart :: ClickEvent
- ,xDragEnd  :: !Double
- ,yDragEnd  :: !Double
- }
- deriving (Eq, Show, Data, Typeable)
+import Control.Category
 
-data EventModifier
-  = ShiftE
-  | LockE
-  | ControlE
-  | AltE
-  | Alt2E
-  | Alt3E
-  | Alt4E
-  | Alt5E
-  | Button1E
-  | Button2E
-  | Button3E
-  | Button4E
-  | Button5E
-  | SuperE
-  | HyperE
-  | MetaE
-  | ReleaseE
-  | ModifierMaskE
-  deriving (Eq, Ord, Show, Data, Typeable)
+-- | A lense for the (X,Y) coordinates of a Click
+xyClick :: ClickEvent :-> (Double, Double)
+xyClick = Lens $ (,) <$> fst `for` xPos <*> snd `for` yPos
 
-fromModifier :: Modifier -> EventModifier
-fromModifier Shift = ShiftE
-fromModifier Lock  = LockE
-fromModifier Control = ControlE
-fromModifier Alt     = AltE
-fromModifier Alt2    = Alt2E
-fromModifier Alt3    = Alt3E
-fromModifier Alt4    = Alt4E
-fromModifier Alt5    = Alt5E
-fromModifier Button1 = Button1E
-fromModifier Button2 = Button2E
-fromModifier Button3 = Button3E
-fromModifier Button4 = Button4E
-fromModifier Button5 = Button5E
-fromModifier Super   = SuperE
-fromModifier Hyper   = HyperE
-fromModifier Meta    = MetaE
-fromModifier Release = ReleaseE
-fromModifier ModifierMask = ModifierMaskE
+xyStart :: DragEvent :-> (Double,Double)
+xyStart = xyClick . dragStart
 
--- | Check if a drag is valid, i.e. start and end points differ
-checkDrag :: DragEvent -> Bool
-checkDrag (DragE (ClickE _ _ cx cy) dx dy) = (cx /= dx) || (cy /= dy)
+xyEnd :: DragEvent :-> (Double, Double)
+xyEnd = Lens $ (,) <$> fst `for` xDragEnd <*> snd `for` yDragEnd
 
-data ClickType = SingleC | DoubleC | TripleC | ReleaseC
-  deriving (Eq, Show, Enum, Ord, Data, Typeable)
-
-data DragAcc = None | Start ClickEvent | Full DragEvent
+-- | A lens on the @(yStart, yEnd)@ values of a @DragEvent@.  Note that 
+-- start and end refer to the start and end clicks.
+dragYs :: DragEvent :-> (Double, Double)
+dragYs = Lens $ (,) <$> fst `for` (yPos . dragStart) <*> snd `for` yDragEnd
 
 addClick :: ClickEvent -> DragAcc -> DragAcc
 addClick (ClickE ReleaseC _ x y) (Start e) = Full $ DragE e x y
@@ -105,12 +60,6 @@ fullAcc _        = False
 fromAcc :: DragAcc -> DragEvent
 fromAcc (Full d) = d
 fromAcc _ = undefined
-
-click2ClickType :: Click -> ClickType
-click2ClickType SingleClick = SingleC
-click2ClickType DoubleClick = DoubleC
-click2ClickType TripleClick = TripleC
-click2ClickType ReleaseClick = ReleaseC
 
 mapFilterE :: (a -> b) -> (a -> Bool) -> Event a -> Event b
 mapFilterE f p e = f <$> filterE p e

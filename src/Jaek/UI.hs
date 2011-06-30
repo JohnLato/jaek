@@ -15,12 +15,10 @@ import           Jaek.UI.Dialogs
 import           Jaek.UI.FrpHandlersCustom
 import           Jaek.UI.MenuActionHandlers
 import           Jaek.UI.Render
-import           Jaek.UI.Views
 
 import           Reactive.Banana as FRP
 import           Diagrams.Prelude hiding (apply)
 
-import           Control.Concurrent.STM
 import           System.FilePath
 
 uiDef :: String
@@ -68,10 +66,14 @@ createMainWindow iProject iTree = do
     eRelease    <- releaseEvents mainArea
     motions     <- motionEvents mainArea
     let drags = dragEvents (clicks <> eRelease)
-        bS1 = bCurSelection drags
+        bS1 = (\w f z s -> map (channelizeDrag w f z) s) <$> bSize
+                <*>  bFocus <*> bZip
+                <*> bCurSelection drags
                             (() <$ filterE (not . clickIsAdditive) clicks)
-        bS2 = genBDrag (clicks <> eRelease) motions
-        bSelForDraw = (\xs mx -> maybe xs (\x -> x:xs) mx) <$> bS1 <*> bS2
+        bS2 = (\w f z s -> fmap (channelizeDrag w f z) s)  <$> bSize
+                <*> bFocus <*> bZip
+                <*> genBDrag (clicks <> eRelease) motions
+        bSelForDraw = (\xs mx -> maybe xs (:xs) mx) <$> bS1 <*> bS2
         bFName = stepper iProject (fst <$> (eNewDoc <> eOpenDoc))
         (bRoot, bProjName) = (takeDirectory <$> bFName,
                               takeFileName  <$> bFName)

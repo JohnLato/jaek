@@ -40,19 +40,19 @@ drawOnExpose ::
   -> [DragEvent]
   -> ()
   -> IO ()
-drawOnExpose da ref d view focus sel () = do
+drawOnExpose da ref d view foc sel () = do
   dw <- widgetGetDrawWindow da
   curSz <- widgetGetSize da
   (lastD, lastView, lastFoc, lastSz) <- readTVarIO ref
   -- only sharing waveviews, because the full tree is quick to redraw
   -- and it can be updated without the view/focus changing
-  let thisView = focus >>= flip M.lookup view
-      check    = (isWaveView <$> thisView) == Just True
-  if focus == lastFoc && check && thisView == Just lastView && curSz == lastSz
+  let thisView = foc >>= flip M.lookup view
+      chk    = (isWaveView <$> thisView) == Just True
+  if foc == lastFoc && chk && thisView == Just lastView && curSz == lastSz
     then renderToGtk dw (compositeSelection sel lastD)
     else do
       let newview = fromMaybe (FullView 0 0) thisView
-      atomically $ writeTVar ref (d, newview, focus, curSz)
+      atomically $ writeTVar ref (d, newview, foc, curSz)
       renderToGtk dw (compositeSelection sel d)
 
 compositeSelection ::

@@ -29,6 +29,7 @@ Executable jaek
                       ,diagrams-lib   >= 0.3     && < 0.4
                       ,directory      >= 1.0     && < 1.2
                       ,filepath       >= 1.2     && < 1.3
+                      ,fclabels       >= 0.11.1  && < 0.12
                       ,gtk            >= 0.12    && < 0.13
                       ,iteratee       >= 0.8.4.0 && < 0.9
                       ,monads-tf      >= 0.1     && < 0.2
@@ -63,6 +64,7 @@ Executable jaek
                       ,Jaek.UI.Dialogs
                       ,Jaek.UI.FrpHandlers
                       ,Jaek.UI.FrpHandlersCustom
+                      ,Jaek.UI.FrpTypes
                       ,Jaek.UI.MenuActionHandlers
                       ,Jaek.UI.Render
                       ,Jaek.UI.Views
