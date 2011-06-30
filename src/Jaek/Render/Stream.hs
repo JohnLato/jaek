@@ -26,13 +26,15 @@ renderPeaks ::
 renderPeaks off dur w pk =
   let (l,h) = U.unzip $ U.map (\(Pk b t) -> (b,t)) pk
       getIx i = ((fI i * dur `div` w) + off) `div` pksz
-      rvec vec = U.generate w (\i ->
-                   let ix = getIx i
+      -- draw only even pixels.  Get a more clear image this way.
+      -- I'll give it a try at any rate...
+      rvec vec = U.generate (w `div` 2) (\i ->
+                   let ix = getIx (2*i)
                    in if ix >= U.length vec then 0 else pk2Double $ vec U.! ix)
       toDgr = fmap (const (First Nothing))
               . stroke
               . fromVertices
-              . P.zipWith (curry P) [0..]
+              . P.zipWith (curry P) [0,2..]
               . U.toList
               . rvec
   in  toDgr l `atop` toDgr h
