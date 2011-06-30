@@ -1,7 +1,8 @@
 {-# LANGUAGE FlexibleContexts, NoMonomorphismRestriction #-}
 
 module Jaek.UI.Render (
-  drawOnExpose
+  initDrawRef
+ ,drawOnExpose
 )
 
 where
@@ -22,10 +23,17 @@ import qualified Data.HashMap.Strict as M
 import Data.Maybe
 import Control.Concurrent.STM
 
+type DrawRef m = TVar (AnnDiagram Cairo R2 m, View, Focus, (Int,Int))
+
+initDrawRef :: Monoid m => DrawingArea -> IO (DrawRef m)
+initDrawRef da = do
+  sz <- widgetGetSize da
+  newTVarIO (mempty, (FullView 0 0), Nothing, sz)
+
 drawOnExpose ::
   Monoid m
   => DrawingArea
-  -> TVar (AnnDiagram Cairo R2 m, View, Focus)
+  -> DrawRef m
   -> AnnDiagram Cairo R2 m
   -> ViewMap
   -> Focus
@@ -34,18 +42,17 @@ drawOnExpose ::
   -> IO ()
 drawOnExpose da ref d view focus sel () = do
   dw <- widgetGetDrawWindow da
-  (lastD, lastView, lastFoc) <- readTVarIO ref
-  -- Reactive.Banana doesn't seem to share the diagram properly, so I'm
-  -- doing it manually...
+  curSz <- widgetGetSize da
+  (lastD, lastView, lastFoc, lastSz) <- readTVarIO ref
   -- only sharing waveviews, because the full tree is quick to redraw
   -- and it can be updated without the view/focus changing
   let thisView = focus >>= flip M.lookup view
       check    = (isWaveView <$> thisView) == Just True
-  if focus == lastFoc && check && thisView == Just lastView
+  if focus == lastFoc && check && thisView == Just lastView && curSz == lastSz
     then renderToGtk dw (compositeSelection sel lastD)
     else do
       let newview = fromMaybe (FullView 0 0) thisView
-      atomically $ writeTVar ref (d, newview, focus)
+      atomically $ writeTVar ref (d, newview, focus, curSz)
       renderToGtk dw (compositeSelection sel d)
 
 compositeSelection ::

@@ -51,7 +51,7 @@ createMainWindow iProject iTree = do
 
   -- create new widgets
   mainArea <- drawingAreaNew
-  drawRef  <- newTVarIO (mempty, (FullView 0 0), Nothing)
+  drawRef  <- initDrawRef mainArea
 
   -- add FRP handler stuff...
   widgetAddEvents mainArea
