@@ -13,6 +13,7 @@ import           Jaek.Tree (HTree)
 import           Jaek.UI.Actions
 import           Jaek.UI.Dialogs
 import           Jaek.UI.FrpHandlersCustom
+import           Jaek.UI.Input.Drags
 import           Jaek.UI.MenuActionHandlers
 import           Jaek.UI.Render
 
@@ -65,15 +66,8 @@ createMainWindow iProject iTree = do
     bSize       <- genBSize mainArea
     eRelease    <- releaseEvents mainArea
     motions     <- motionEvents mainArea
-    let drags = dragEvents (clicks <> eRelease)
-        bS1 = (\w f z s -> map (channelizeDrag w f z) s) <$> bSize
-                <*>  bFocus <*> bZip
-                <*> bCurSelection drags
-                            (() <$ filterE (not . clickIsAdditive) clicks)
-        bS2 = (\w f z s -> fmap (channelizeDrag w f z) s)  <$> bSize
-                <*> bFocus <*> bZip
-                <*> genBDrag (clicks <> eRelease) motions
-        bSelForDraw = (\xs mx -> maybe xs (:xs) mx) <$> bS1 <*> bS2
+    let (drags, ndReleases) = dragEvents (clicks <> eRelease)
+        bSelForDraw = bSelection bSize bFocus bZip clicks eRelease drags motions
         bFName = stepper iProject (fst <$> (eNewDoc <> eOpenDoc))
         (bRoot, bProjName) = (takeDirectory <$> bFName,
                               takeFileName  <$> bFName)

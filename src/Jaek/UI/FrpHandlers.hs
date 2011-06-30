@@ -48,6 +48,9 @@ xyEnd = Lens $ (,) <$> fst `for` xDragEnd <*> snd `for` yDragEnd
 dragYs :: DragEvent :-> (Double, Double)
 dragYs = Lens $ (,) <$> fst `for` (yPos . dragStart) <*> snd `for` yDragEnd
 
+releaseFromDrag :: DragEvent -> ClickEvent
+releaseFromDrag (DragE strt x y) = ClickE ReleaseC (getL clickMods strt) x y
+
 addClick :: ClickEvent -> DragAcc -> DragAcc
 addClick (ClickE ReleaseC _ x y) (Start e) = Full $ DragE e x y
 addClick (ClickE ReleaseC _ _ _) _ = None
@@ -105,14 +108,20 @@ motionEvents widget = event1 $ \k ->
 -- 
 -- > clicks <- clickEvents w
 -- > releases <- releaseEvents w
--- > let drags = dragEvents $ clicks <> releases
-dragEvents :: Event ClickEvent -> Event DragEvent
-dragEvents es = filterE checkDrag . mapFilterE fromAcc fullAcc $
-  accumE None (addClick <$> es)
+-- > let drags = fst <$> dragEvents $ clicks <> releases
+-- 
+-- The second returned parameter are clicks releases which *do not*
+-- include DragEvent-ending releases.
+dragEvents :: Event ClickEvent -> (Event DragEvent, Event ClickEvent)
+dragEvents es =
+  (filterE checkDrag allDrags
+  ,mapFilterE releaseFromDrag (not . checkDrag) allDrags)
+ where
+  allDrags = mapFilterE fromAcc fullAcc $ accumE None (addClick <$> es)
 
 -- | generate a behavior of the current drag event.  This should work
 -- for any EventMask, even if PointerMotionMask is on, because it filters
--- all events when a button isn't pressed.
+-- all events when a mouse button isn't pressed.
 genBDrag ::
   Event ClickEvent
   -> Event ([EventModifier], Double, Double) 

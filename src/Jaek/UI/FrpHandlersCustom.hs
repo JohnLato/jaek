@@ -2,12 +2,9 @@
 -- into a separate package.
 module Jaek.UI.FrpHandlersCustom (
   Focus
- ,channelizeDrag
  ,genBZip
  ,genBDraw
  ,genBFocus
- ,bCurSelection
- ,clickIsAdditive
 )
 
 where
@@ -46,38 +43,6 @@ genBZip iTree eNewDoc eNewSource = (fst <$> bPair, snd <$> bPair)
                  let z' = newSource n1 n2 zp
                  in (z', updateMap z' AddSrc mp)) <$> eNewSource)
 
--- | check if a drag event should be added to current selection (shift-drag)
--- or replace it.
-dragIsAdditive :: DragEvent -> Bool
-dragIsAdditive = clickIsAdditive . getL dragStart
-
-clickIsAdditive :: ClickEvent -> Bool
-clickIsAdditive = any (== ShiftE) . getL clickMods
-
--- | The (X,Y) coordinates of a DragEvent need to be adjusted to match
--- the channels in a WaveView.
-channelizeDrag :: (Int, Int) -> Focus -> TreeZip -> DragEvent -> DragEvent
-channelizeDrag (_, ySz) focus zp drg
-  | isTree focus = drg
-  | nc <= 1      = drg
-  | otherwise = modL dragYs ((inf *** inf) >>> adjf >>> (outf *** outf)) drg
- where
-  nc = liftT numChans $ hole zp
-  adjf (s,e) = if e >= s then (floor s, ceiling e) else (ceiling s, floor e)
-  ySz' = fI ySz :: Double
-  nc'  = fI nc :: Double
-  inf y = nc' * (y / ySz')
-  outf y = ySz' * (fI y / nc')
-
-bCurSelection :: Event DragEvent -> Event () -> Behavior [DragEvent]
-bCurSelection eDrags eClear =
-  accumB [] $ (dragAcc <$> eDrags) <> (clearAcc <$> eClear)
- where
-  dragAcc drag acc
-    | dragIsAdditive drag = drag:acc
-    | otherwise           = [drag]
-  clearAcc () _           = []
-
 -- | Generate (Behavior (IO Focus), Event (IO Focus))
 --  the @Event Focus@ are emitted when the focus changes, and can be used to
 --  trigger screen refreshes
@@ -107,5 +72,3 @@ genBDraw ::
   -> Behavior (AnnDiagram Cairo R2 (First TreePath))
 genBDraw bRoot bZip getFocus bsize bview =
   drawAt <$> bRoot <*> bZip <*> getFocus <*> bsize <*> bview
-
-

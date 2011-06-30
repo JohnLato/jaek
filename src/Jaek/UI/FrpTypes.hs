@@ -13,6 +13,9 @@ import Data.Data
 
 import Data.Record.Label
 
+data ClickType = SingleC | DoubleC | TripleC | ReleaseC
+  deriving (Eq, Show, Enum, Ord, Data, Typeable)
+
 -- | Encapsulate information about a click
 data ClickEvent = ClickE {
   _clickType :: !ClickType
@@ -75,9 +78,6 @@ fromModifier ModifierMask = ModifierMaskE
 checkDrag :: DragEvent -> Bool
 checkDrag (DragE (ClickE _ _ cx cy) dx dy) = (cx /= dx) || (cy /= dy)
 
-data ClickType = SingleC | DoubleC | TripleC | ReleaseC
-  deriving (Eq, Show, Enum, Ord, Data, Typeable)
-
 data DragAcc = None | Start ClickEvent | Full DragEvent
 
 click2ClickType :: Click -> ClickType
@@ -85,5 +85,12 @@ click2ClickType SingleClick = SingleC
 click2ClickType DoubleClick = DoubleC
 click2ClickType TripleClick = TripleC
 click2ClickType ReleaseClick = ReleaseC
+
+isClick :: ClickEvent -> Bool
+isClick = not . isRelease
+
+isRelease :: ClickEvent -> Bool
+isRelease (ClickE ReleaseC _ _ _) = True
+isRelease _                       = False
 
 $(mkLabels [''ClickEvent, ''DragEvent])
