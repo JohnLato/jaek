@@ -10,6 +10,7 @@ module Jaek.UI.FrpHandlers (
  ,dragYs
  ,mapFilterE
  ,exposeEvents
+ ,keypressEvents
  ,clickEvents
  ,releaseEvents
  ,motionEvents
@@ -76,6 +77,12 @@ event1 k = do
 exposeEvents :: WidgetClass w => w -> NetworkDescription (Event ())
 exposeEvents widget = event1 $ \k ->
   ignore $ widget `onExpose` const (k () >> return True)
+
+keypressEvents :: WidgetClass w => w -> NetworkDescription (Event KeyVal)
+keypressEvents widget = event1 $ \k ->
+  ignore $ on widget keyPressEvent $ tryEvent $ do
+    kv <- eventKeyVal
+    liftIO $ k kv
 
 clickEvents :: WidgetClass w => w -> NetworkDescription (Event ClickEvent)
 clickEvents widget = event1 $ \k ->
