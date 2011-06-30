@@ -33,21 +33,18 @@ bSelection bSize bFocus bZip clicks releases drags motions =
   ff' = (\sel clk -> not (clickIsAdditive clk) && ff sel clk) <$> bS1
   bS1 = (\w f z s -> map (channelizeDrag w f z) s) <$> bSize
           <*> bFocus <*> bZip
-          <*> bCurSelection drags (() <$ filterApply ff' clicks)
+          <*> bCurSelection (filterApply bMask drags)
+                            (() <$ filterApply ff' clicks)
   bS2 = (\w f z s -> fmap (channelizeDrag w f z) s)  <$> bSize
           <*> bFocus <*> bZip
-          <*> genBDrag filtCurClk motions
+          <*> genBDrag filtCurClk (filterApply bMask motions)
   -- for genBDrag's input, if we filter a click, we also want to filter the 
   -- release.  Annotate each click with a bool, true iff we keep the click,
   -- otherwise false
-  filtCurClk =  mapFilterE snd fst $ accumE (False, ClickE ReleaseC [] 0 0)
-                 ((\this@(k,clk) (keep,_clk) ->
-                   if isClick clk || keep
-                     then this
-                     else (False, clk)
-                  ) <$> (FRP.apply ((\sel clk ->
-                                      (ff sel clk, clk)) <$> bS1) clicks
-                         <> ( (True,) <$> releases)))
+  annClicks = FRP.apply ((\sel clk -> (ff sel clk, clk)) <$> bS1) clicks
+  bMask :: Behavior (u -> Bool)
+  bMask = stepper (const False) $ (const . fst <$> annClicks)
+  filtCurClk = mapFilterE snd fst annClicks <> filterApply bMask releases
 
 
 -- | check if a drag event should be added to current selection (shift-drag)

@@ -23,7 +23,6 @@ import Diagrams.Backend.Cairo
 import Data.Record.Label
 
 import Data.Maybe
-import Control.Arrow ((***), (>>>))
 
 -- | generate the behavior of the zipper and the viewmap.  Since
 -- the viewmap depends on the zipper, the two need to be created

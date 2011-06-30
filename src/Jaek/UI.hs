@@ -66,11 +66,11 @@ createMainWindow iProject iTree = do
     bSize       <- genBSize mainArea
     eRelease    <- releaseEvents mainArea
     motions     <- motionEvents mainArea
-    let (drags, ndReleases) = dragEvents (clicks <> eRelease)
+    let (drags, _ndReleases) = dragEvents (clicks <> eRelease)
         bSelForDraw = bSelection bSize bFocus bZip clicks eRelease drags motions
         bFName = stepper iProject (fst <$> (eNewDoc <> eOpenDoc))
-        (bRoot, bProjName) = (takeDirectory <$> bFName,
-                              takeFileName  <$> bFName)
+        (bRoot, _bProjName) = (takeDirectory <$> bFName,
+                               takeFileName  <$> bFName)
         (bZip, bView) = genBZip iTree (eNewDoc <> eOpenDoc) eNewSource
         bDraw = genBDraw bRoot bZip bFocus bSize bView
         (bFocus, eFocChange) = genBFocus bDraw clicks
