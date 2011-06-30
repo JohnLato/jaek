@@ -15,8 +15,9 @@ import Jaek.Base
 import Jaek.Render
 import Jaek.StreamExpr
 import Jaek.Tree
-import Jaek.UI.Views
+import Jaek.UI.Focus
 import Jaek.UI.FrpHandlers
+import Jaek.UI.Views
 
 import Reactive.Banana  as FRP
 import Diagrams.Prelude as D
@@ -59,26 +60,24 @@ bCurSelection eDrags eClear =
     | otherwise           = [drag]
   clearAcc () _           = []
 
-type Focus = Maybe [Int]
-
 -- | Generate (Behavior (IO Focus), Event (IO Focus))
 --  the @Event Focus@ are emitted when the focus changes, and can be used to
 --  trigger screen refreshes
 --  it's important to only trigger focus events when the focus actually changes
---  presently I filter out non-changing focus events, however it would
---  probably be more efficient to be more selective with the input signals.
 genBFocus :: Behavior (AnnDiagram Cairo R2 (First TreePath))
   -> Event ClickEvent
   -> (Behavior Focus, Event Focus )
 genBFocus bDraw clicks = (beh, eFilt)
  where
   beh   = stepper Nothing eFilt
-  eFilt  = filterApply ((\old new -> old /= new) <$> beh) eFocus
+  eFilt  = filterApply ((/=) <$> beh) eFocus
   eFocus = filterE isJust $
+            -- change from Tree to Wave
             FRP.apply ((\d clk -> getFirst $ runQuery (query d)
                                                       (P (xPos clk, yPos clk)) )
                                   <$> bDraw)
-                       clicks
+                      (filterApply ((const . isTree) <$> beh) clicks)
+            -- change from Wave to Tree not implemented yet
 
 -- | generate a Behavior Diagram producer
 genBDraw ::
