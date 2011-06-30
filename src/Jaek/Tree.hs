@@ -28,6 +28,7 @@ module Jaek.Tree (
  ,liftT
  -- ** user tree manipulation functions
  ,mkCut
+ ,mkMute
  ,mkInsert
  ,mkMix
  ,module Data.Generics.Uniplate.Zipper
@@ -206,7 +207,12 @@ mod2 nm chns gen zp =
 -- The new child is in focus after this operation.
 -- If no valid channels are specified, the zipper is unchanged.
 mkCut :: [Int] -> SampleCount -> SampleCount -> TreeZip -> TreeZip
-mkCut chns off dur = mod1 "mkCut" chns (\cn -> Cut cn off dur)
+mkCut chns off dur = mod1 "mkCut" chns $ \cn -> [Cut cn off dur]
+
+-- | Mute the current node in the specific locations
+mkMute :: [(Int, SampleCount, SampleCount)] -> TreeZip -> TreeZip
+mkMute sels = mod1 "mkMute" (map (\(i,_,_) -> i) sels) $ \cn ->
+  map (\(i,off,dur) -> Mute cn off dur) $ filter (\(i,_,_) -> i == cn) sels
 
 -- | Perform an insert at the current node.
 mkInsert

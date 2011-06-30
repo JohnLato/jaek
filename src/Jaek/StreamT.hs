@@ -15,6 +15,7 @@ import           Data.Data
 -- serialize.
 data StreamT =
    Cut    ChanNum         SampleCount SampleCount
+ | Mute   ChanNum         SampleCount SampleCount
  | Insert ChanNum NodeRef ChanNum SampleCount SampleCount SampleCount
  | Mix    ChanNum NodeRef ChanNum SampleCount SampleCount SampleCount
  deriving (Eq, Show, Data, Typeable)
