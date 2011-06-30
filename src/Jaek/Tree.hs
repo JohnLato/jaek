@@ -170,10 +170,10 @@ modifyListAt n f xs = let (h,t) = splitAt n xs in h ++ [f (head t)] ++ tail t
 -- ------------------------
 -- helpers to construct user functions
 
-mod1 :: String -> [Int] -> (ChanNum -> StreamT) -> TreeZip -> TreeZip
+mod1 :: String -> [Int] -> (ChanNum -> [StreamT]) -> TreeZip -> TreeZip
 mod1 nm chns gen zp =
   let cur = hole zp
-      streamTs = map gen $ liftT validateChans cur chns
+      streamTs = concatMap gen $ liftT validateChans cur chns
       strExpr' pth = Mod pth streamTs
                      (foldl (applyTransform zp) (getExprs cur) streamTs)
       (node', pos) = addChild strExpr' cur
@@ -183,14 +183,14 @@ mod1 nm chns gen zp =
                 followPath [pos] (replaceHole node' zp)
 
 mod2
-  :: String                          -- ^ Name of function
-  -> [(Int,Int)]                     -- ^ (srcChn, dstChn)
-  -> (ChanNum -> ChanNum -> StreamT) -- ^ srcChan -> dstChan -> StreamT
+  :: String                            -- ^ Name of function
+  -> [(Int,Int)]                       -- ^ (srcChn, dstChn)
+  -> (ChanNum -> ChanNum -> [StreamT]) -- ^ srcChan -> dstChan -> [StreamT]
   -> TreeZip
   -> TreeZip
 mod2 nm chns gen zp =
   let cur = hole zp
-      streamTs = map (uncurry gen) $ liftT validateChanP cur chns
+      streamTs = concatMap (uncurry gen) $ liftT validateChanP cur chns
       strExpr' pth = Mod pth streamTs
                      (foldl (applyTransform zp) (getExprs cur) streamTs)
       (node', pos) = addChild strExpr' cur
@@ -219,7 +219,7 @@ mkInsert
   -> TreeZip
 mkInsert chns srcOff dur dstOff srcref =
   mod2 "mkInsert" chns (\srcChn dstChn ->
-    Insert dstChn srcref srcChn dstOff srcOff dur)
+    [Insert dstChn srcref srcChn dstOff srcOff dur])
 
 -- | Perform a mix at the current node.
 mkMix
@@ -232,4 +232,4 @@ mkMix
   -> TreeZip
 mkMix chns srcOff dur dstOff srcref =
   mod2 "mkMix" chns (\srcChn dstChn ->
-    T.Mix dstChn srcref srcChn dstOff srcOff dur)
+    [T.Mix dstChn srcref srcChn dstOff srcOff dur])
