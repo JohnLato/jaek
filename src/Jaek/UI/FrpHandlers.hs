@@ -7,6 +7,7 @@ module Jaek.UI.FrpHandlers (
   xyClick
  ,xyStart
  ,xyEnd
+ ,dragXs
  ,dragYs
  ,mapFilterE
  ,exposeEvents
@@ -43,6 +44,9 @@ xyStart = xyClick . dragStart
 
 xyEnd :: DragEvent :-> (Double, Double)
 xyEnd = Lens $ (,) <$> fst `for` xDragEnd <*> snd `for` yDragEnd
+
+dragXs :: DragEvent :-> (Double, Double)
+dragXs = Lens $ (,) <$> fst `for` (xPos . dragStart) <*> snd `for` xDragEnd
 
 -- | A lens on the @(yStart, yEnd)@ values of a @DragEvent@.  Note that 
 -- start and end refer to the start and end clicks.

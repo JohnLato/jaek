@@ -2,6 +2,7 @@
 
 module Jaek.UI.Input.Drags (
   bSelection
+ ,dragToRegions
 )
 
 where
@@ -10,12 +11,13 @@ import Jaek.Base
 import Jaek.Tree
 import Jaek.UI.Focus
 import Jaek.UI.FrpHandlers
+import Jaek.UI.Views
 
 import Reactive.Banana  as FRP
 import Diagrams.Prelude as D
 import Data.Record.Label
 
-import Control.Arrow ((***), (>>>))
+import Control.Arrow
 
 -- The current selection is a Behavior [DragEvent].  There are two components,
 -- the current drag event, and any prior selected regions (if the current event
@@ -70,6 +72,26 @@ channelizeDrag (_, ySz) focus zp drg
   inf y = nc' * (y / ySz')
   outf :: Int -> Double
   outf y = ySz' * (fI y / nc')
+
+dragToRegions ::
+  (Int, Int)
+  -> TreeZip
+  -> ViewMap
+  -> DragEvent
+  -> [(Int, SampleCount, SampleCount)]
+dragToRegions (xSz, ySz) zp vm drg =
+  map (,xStart,xEnd)
+   . uncurry enumFromTo
+   . (uncurry min &&& (subtract 1 . uncurry max))
+   . (chnBorder *** chnBorder)
+   $ getL dragYs drg
+ where
+  t  = hole zp
+  WaveView off dur = getView vm t
+  nc = liftT numChans t
+  (xStart,xEnd) = (x2sc . uncurry min &&& x2sc . uncurry max) $ getL dragXs drg
+  x2sc x = off + floor (fI dur * (x / fI xSz))
+  chnBorder y = (round $ fI nc * (y / fI ySz)) :: Int
 
 bCurSelection :: Event DragEvent -> Event () -> Behavior [DragEvent]
 bCurSelection eDrags eClear =

@@ -7,6 +7,7 @@ module Jaek.UI.Views (
   ,isWaveView
   ,iMap
   ,mapFromTree
+  ,getView
   ,updateMap
 )
 
@@ -19,7 +20,8 @@ import           Jaek.Tree
 import qualified Data.HashMap.Strict as M
 
 import           Data.List (foldl')
-import           Data.Tree (flatten)
+import           Data.Maybe
+import           Data.Tree
 
 type ViewMap = M.HashMap TreePath View
 
@@ -44,6 +46,14 @@ updateMap zp AddSrc mp = addSource zp mp
 
 iMap :: ViewMap
 iMap = mapFromTree $ fromZipper iZip
+
+-- | Return either the view for a node, or the default view
+getView :: ViewMap -> HTree -> View
+getView m (Node node _) = fromMaybe def $ M.lookup (nodePath node) m
+ where
+  def
+   | node == Root = FullView 1 1
+   | otherwise    = WaveView 0 $ foldl' max 0 . map getDur $ getExprs' node
 
 -- | Create a new map with a default view for everything in the tree.
 mapFromTree :: HTree -> ViewMap

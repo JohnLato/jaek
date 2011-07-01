@@ -65,6 +65,7 @@ Executable jaek
                       ,Jaek.UI.FrpHandlers
                       ,Jaek.UI.FrpHandlersCustom
                       ,Jaek.UI.FrpTypes
+                      ,Jaek.UI.Input.Action
                       ,Jaek.UI.Input.Drags
                       ,Jaek.UI.MenuActionHandlers
                       ,Jaek.UI.Render
