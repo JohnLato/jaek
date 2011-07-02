@@ -36,6 +36,7 @@ Executable jaek
                       ,stm            >= 2.2     && < 3.0
                       ,parallel       >= 2.1     && < 4.0
                       ,transformers   >= 0.2     && < 0.3
+                      ,tuple          >= 0.2     && < 0.4
                       ,uniplate       >= 1.6     && < 1.7
                       ,utf8-string    >= 0.3.0   && < 0.4
                       ,vector         >= 0.7     && < 0.8
@@ -56,6 +57,7 @@ Executable jaek
                       ,Jaek.Render
                       ,Jaek.Render.Stream
                       ,Jaek.Render.Tree
+                      ,Jaek.SegmentOlaps
                       ,Jaek.StreamExpr
                       ,Jaek.StreamT
                       ,Jaek.Tree
