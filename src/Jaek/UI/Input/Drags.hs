@@ -25,6 +25,15 @@ import Control.Arrow
 -- event outside a selected area.
 -- 
 -- when a click occurs within the current selection, it should be ignored.
+bSelection ::
+  Behavior (Int,Int)
+  -> Behavior Focus
+  -> Behavior TreeZip
+  -> Event ClickEvent    -- ^ clicks
+  -> Event ClickEvent    -- ^ releases
+  -> Event DragEvent
+  -> Event ([EventModifier], Double, Double)
+  -> Behavior [DragEvent]
 bSelection bSize bFocus bZip clicks releases drags motions =
   (\xs mx -> maybe xs (:xs) mx) <$> bS1 <*> bS2
  where
@@ -73,14 +82,16 @@ channelizeDrag (_, ySz) focus zp drg
   outf :: Int -> Double
   outf y = ySz' * (fI y / nc')
 
+-- | usually I use @(Int,SampleCount, SampleCount)@ for the region type,
+-- but here it's nested tuples to facilitate further processing
 dragToRegions ::
   (Int, Int)
   -> TreeZip
   -> ViewMap
   -> DragEvent
-  -> [(Int, SampleCount, SampleCount)]
+  -> [(Int, (SampleCount, SampleCount))]
 dragToRegions (xSz, ySz) zp vm drg =
-  map (,xStart,xEnd)
+  map (,(xStart,xEnd))
    . uncurry enumFromTo
    . (uncurry min &&& (subtract 1 . uncurry max))
    . (chnBorder *** chnBorder)

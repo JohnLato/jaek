@@ -10,6 +10,7 @@ module Jaek.UI.FrpHandlers (
  ,dragXs
  ,dragYs
  ,mapFilterE
+ ,filterMaybes
  ,exposeEvents
  ,keypressEvents
  ,clickEvents
@@ -34,6 +35,7 @@ import Diagrams.Prelude ((<>))
 import Data.Record.Label
 
 import Control.Category
+import Data.Maybe
 
 -- | A lense for the (X,Y) coordinates of a Click
 xyClick :: ClickEvent :-> (Double, Double)
@@ -72,6 +74,9 @@ fromAcc _ = undefined
 mapFilterE :: (a -> b) -> (a -> Bool) -> Event a -> Event b
 mapFilterE f p e = f <$> filterE p e
 
+filterMaybes :: Event (Maybe a) -> Event a
+filterMaybes e = fromJust <$> filterE isJust e
+
 event1 :: Typeable a => ((a -> IO ()) -> IO ()) -> NetworkDescription (Event a)
 event1 k = do
   (addHandler, runHandlers) <- liftIO newAddHandler
@@ -86,6 +91,7 @@ keypressEvents :: WidgetClass w => w -> NetworkDescription (Event KeyVal)
 keypressEvents widget = event1 $ \k ->
   ignore $ on widget keyPressEvent $ tryEvent $ do
     kv <- eventKeyVal
+    liftIO $ print $ "got KeyVal: " ++ show kv
     liftIO $ k kv
 
 clickEvents :: WidgetClass w => w -> NetworkDescription (Event ClickEvent)

@@ -31,16 +31,20 @@ genBZip ::
   HTree
   -> Event (String, HTree)
   -> Event (String, [StreamExpr])
+  -> Event (TreeZip -> TreeZip)
   -> (Behavior TreeZip, Behavior ViewMap)
-genBZip iTree eNewDoc eNewSource = (fst <$> bPair, snd <$> bPair)
+genBZip iTree eNewDoc eNewSource eTreeMod = (fst <$> bPair, snd <$> bPair)
  where
   bPair = accumB (zipper iTree, mapFromTree iTree) $
               ((\(_rt,ht) (_z,mp) ->
-                  let nz = zipper ht
-                  in (nz, updateMap nz NewDoc mp)) <$> eNewDoc)
+                  let z' = zipper ht
+                  in (z', updateMap z' NewDoc mp)) <$> eNewDoc)
            <> ((\(n1,n2) (zp,mp) ->
-                 let z' = newSource n1 n2 zp
-                 in (z', updateMap z' AddSrc mp)) <$> eNewSource)
+                  let z' = newSource n1 n2 zp
+                  in (z', updateMap z' AddSrc mp)) <$> eNewSource)
+           <> ((\updateF (zp,mp) ->
+                  let z' = updateF zp
+                  in (z', updateMap z' MdNode mp)) <$> eTreeMod)
 
 -- | Generate (Behavior (IO Focus), Event (IO Focus))
 --  the @Event Focus@ are emitted when the focus changes, and can be used to
@@ -48,17 +52,19 @@ genBZip iTree eNewDoc eNewSource = (fst <$> bPair, snd <$> bPair)
 --  it's important to only trigger focus events when the focus actually changes
 genBFocus :: Behavior (AnnDiagram Cairo R2 (First TreePath))
   -> Event ClickEvent
+  -> Event TreeZip
   -> (Behavior Focus, Event Focus )
-genBFocus bDraw clicks = (beh, eFilt)
+genBFocus bDraw clicks eTreeChange = (beh, eFilt)
  where
-  beh   = stepper Nothing eFilt
+  beh    = stepper Nothing eFilt
   eFilt  = filterApply ((/=) <$> beh) eFocus
-  eFocus = filterE isJust $
+  eFocus = (Just . getPath <$> eTreeChange)
+           <> filterE isJust (
             -- change from Tree to Wave
             FRP.apply ((\d clk -> getFirst $ runQuery (query d)
                                                       (P $ getL xyClick clk) )
                                   <$> bDraw)
-                      (filterApply ((const . isTree) <$> beh) clicks)
+                      (filterApply ((const . isTree) <$> beh) clicks) )
             -- change from Wave to Tree not implemented yet
 
 -- | generate a Behavior Diagram producer

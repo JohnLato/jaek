@@ -42,6 +42,7 @@ import           Jaek.StreamT as T
 
 import           Data.Generics.Uniplate.Direct
 import           Data.Generics.Uniplate.Zipper
+import           Data.Tuple.Select
 
 import           Data.Data
 import           Data.Maybe
@@ -206,13 +207,14 @@ mod2 nm chns gen zp =
 -- | Perform a cut in the current node in the specified channels.
 -- The new child is in focus after this operation.
 -- If no valid channels are specified, the zipper is unchanged.
-mkCut :: [Int] -> SampleCount -> SampleCount -> TreeZip -> TreeZip
-mkCut chns off dur = mod1 "mkCut" chns $ \cn -> [Cut cn off dur]
+mkCut :: [(Int, SampleCount, SampleCount)] -> TreeZip -> TreeZip
+mkCut sels = mod1 "mkCut" (map sel1 sels) $ \cn ->
+  map (\(i,off,dur) -> Cut cn off dur) $ filter (\i -> sel1 i == cn) sels
 
 -- | Mute the current node in the specific locations
 mkMute :: [(Int, SampleCount, SampleCount)] -> TreeZip -> TreeZip
-mkMute sels = mod1 "mkMute" (map (\(i,_,_) -> i) sels) $ \cn ->
-  map (\(i,off,dur) -> Mute cn off dur) $ filter (\(i,_,_) -> i == cn) sels
+mkMute sels = mod1 "mkMute" (map sel1 sels) $ \cn ->
+  map (\(i,off,dur) -> Mute cn off dur) $ filter (\i -> sel1 i == cn) sels
 
 -- | Perform an insert at the current node.
 mkInsert

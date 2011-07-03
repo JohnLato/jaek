@@ -12,7 +12,9 @@ import           Jaek.Project
 import           Jaek.Tree (HTree)
 import           Jaek.UI.Actions
 import           Jaek.UI.Dialogs
+import           Jaek.UI.Focus
 import           Jaek.UI.FrpHandlersCustom
+import           Jaek.UI.Input.Actions
 import           Jaek.UI.Input.Drags
 import           Jaek.UI.MenuActionHandlers
 import           Jaek.UI.Render
@@ -54,7 +56,7 @@ createMainWindow iProject iTree = do
 
   -- add FRP handler stuff...
   widgetAddEvents mainArea
-    [ButtonPressMask, ButtonReleaseMask, ButtonMotionMask]
+    [KeyPressMask, ButtonPressMask, ButtonReleaseMask, ButtonMotionMask]
 
   network <- FRP.compile $ do
     eNewDoc     <- newHandler standardGroup win
@@ -62,20 +64,26 @@ createMainWindow iProject iTree = do
     eSaveDoc    <- saveHandler standardGroup win
     eNewSource  <- importHandler standardGroup win
     eMainExpose <- exposeEvents mainArea
+    -- only the window receives keypress events...
+    eKeypresses <- keypressEvents win
     clicks      <- clickEvents mainArea
-    bSize       <- genBSize mainArea
+    bSz         <- genBSize mainArea
     eRelease    <- releaseEvents mainArea
     motions     <- motionEvents mainArea
     let (drags, _ndReleases) = dragEvents (clicks <> eRelease)
-        bSelForDraw = bSelection bSize bFocus bZip clicks eRelease drags motions
+        bFiltInWave = const . isWave <$> bFocus
+        treeMods = keyActions bSz bView bSels $
+                     filterApply bFiltInWave eKeypresses
+        bSels  = bSelection bSz bFocus bZip clicks eRelease drags motions
         bFName = stepper iProject (fst <$> (eNewDoc <> eOpenDoc))
         (bRoot, _bProjName) = (takeDirectory <$> bFName,
                                takeFileName  <$> bFName)
-        (bZip, bView) = genBZip iTree (eNewDoc <> eOpenDoc) eNewSource
-        bDraw = genBDraw bRoot bZip bFocus bSize bView
-        (bFocus, eFocChange) = genBFocus bDraw clicks
+        (bZip, bView) = genBZip iTree (eNewDoc <> eOpenDoc) eNewSource treeMods
+        bDraw = genBDraw bRoot bZip bFocus bSz bView
+        (bFocus, eFocChange) = genBFocus bDraw clicks $ apply
+                                ((\tz tmf -> tmf tz) <$> bZip) treeMods
     reactimate $ apply (drawOnExpose mainArea drawRef <$> bDraw
-                          <*> bView <*> bFocus <*> bSelForDraw)
+                          <*> bView <*> bFocus <*> bSels)
                        eMainExpose
 
     -- redraw the window when the state is updated by dirtying the widget.
