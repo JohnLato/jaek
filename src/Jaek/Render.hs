@@ -37,6 +37,7 @@ drawAt _root zp (Just [])  (x,_) _ =
 drawAt root zp (Just ref) (x,y) vmap =
   maybe (toGtkCoords . scale (0.25* fI x) . drawTree $ fromZipper zp)
         (\(z', v) -> let d = alignB . vcat
+                             . reverse
                              . parMap rseq (renderPeaks off dur x)
                              . unsafePerformIO
                              $ createReadPeaksForNode root z'
