@@ -12,6 +12,7 @@ module Jaek.StreamExpr (
  ,cut
  ,trim
  ,insert
+ ,insertSilence
  ,insertRegion
  ,mix
   -- ** consuming StreamExprs
@@ -100,6 +101,15 @@ insert n src dst =
   let r1 = Region dst 0 n
       r2 = Region dst n (getDur dst - n)
   in  cutCleanup $ StreamSeq [r1, src, r2]
+
+-- | insert a silent region into @StreamExpr@
+insertSilence :: SampleCount -> SampleCount -> StreamExpr -> StreamExpr
+insertSilence off dur expr =
+  let r1 = Region expr 0 off
+      sl = GenSource Null dur
+      r2 = Region expr (off+dur) (getDur expr - (off+dur))
+  in  cutCleanup $ StreamSeq [r1, sl, r2]
+  
 
 -- | insert @StreamExpr b@ into @StreamExpr a@ at @dstOff@.
 -- 

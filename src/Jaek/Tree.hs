@@ -154,6 +154,8 @@ getExpr ref chn zp = do
 -- | Apply a stream transform to a list of StreamExprs, matching channels
 applyTransform :: TreeZip -> [StreamExpr] -> StreamT -> [StreamExpr]
 applyTransform _ expr (Cut chn off dur) = modifyListAt chn (cut off dur) expr
+applyTransform _ expr (Mute chn off dur) =
+  modifyListAt chn (insertSilence off dur) expr
 applyTransform z expr (Insert dstChn ref srcChn dstOff srcOff dur) =
   case getExpr ref srcChn z of
     Nothing  -> []
@@ -162,7 +164,6 @@ applyTransform z expr (T.Mix dstChn ref srcChn dstOff srcOff dur) =
   case getExpr ref srcChn z of
     Nothing  -> []
     Just src -> modifyListAt dstChn (mix srcOff dur dstOff src) expr
-applyTransform _ _ _ = error "applyTransform not fully implemented"
 
 modifyListAt :: Int -> (a -> a) -> [a] -> [a]
 modifyListAt n f xs = let (h,t) = splitAt n xs in h ++ [f (head t)] ++ tail t
