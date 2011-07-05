@@ -32,8 +32,10 @@ genBZip ::
   -> Event (String, HTree)
   -> Event (String, [StreamExpr])
   -> Event (TreeZip -> TreeZip)
+  -> Event Focus
   -> (Behavior TreeZip, Behavior ViewMap)
-genBZip iTree eNewDoc eNewSource eTreeMod = (fst <$> bPair, snd <$> bPair)
+genBZip iTree eNewDoc eNewSource eTreeMod eFocChange =
+  (fst <$> bPair, snd <$> bPair)
  where
   bPair = accumB (zipper iTree, mapFromTree iTree) $
               ((\(_rt,ht) (_z,mp) ->
@@ -45,6 +47,7 @@ genBZip iTree eNewDoc eNewSource eTreeMod = (fst <$> bPair, snd <$> bPair)
            <> ((\updateF (zp,mp) ->
                   let z' = updateF zp
                   in (z', updateMap z' MdNode mp)) <$> eTreeMod)
+           <> ((\newFoc (zp,mp) -> (goToFocus zp newFoc, mp)) <$> eFocChange)
 
 -- | Generate (Behavior (IO Focus), Event (IO Focus))
 --  the @Event Focus@ are emitted when the focus changes, and can be used to

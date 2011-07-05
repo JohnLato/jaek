@@ -7,6 +7,7 @@ where
 import Graphics.UI.Gtk
 import Jaek.SegmentOlaps
 import Jaek.Tree
+import Jaek.UI.Focus
 import Jaek.UI.FrpHandlers
 import Jaek.UI.Input.Drags
 import Jaek.UI.Views

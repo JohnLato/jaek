@@ -78,7 +78,8 @@ createMainWindow iProject iTree = do
         bFName = stepper iProject (fst <$> (eNewDoc <> eOpenDoc))
         (bRoot, _bProjName) = (takeDirectory <$> bFName,
                                takeFileName  <$> bFName)
-        (bZip, bView) = genBZip iTree (eNewDoc <> eOpenDoc) eNewSource treeMods
+        (bZip, bView) = genBZip iTree (eNewDoc <> eOpenDoc) eNewSource
+                          treeMods eFocChange
         bDraw = genBDraw bRoot bZip bFocus bSz bView
         (bFocus, eFocChange) = genBFocus bDraw clicks $ apply
                                 ((\tz tmf -> tmf tz) <$> bZip) treeMods
