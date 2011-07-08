@@ -20,6 +20,7 @@ import           Jaek.Tree
 
 import           Data.Iteratee (Iteratee (..), run, joinI, (><>))
 import qualified Data.Iteratee as I
+import           Data.Iteratee.Parallel
 import           Blaze.ByteString.Builder
 
 import qualified Data.Vector.Generic.Mutable as M
@@ -35,6 +36,7 @@ import           Data.List (intercalate)
 import           Data.Tree
 
 import           Control.Concurrent
+import qualified Control.Concurrent.Thread as Thread
 import           Control.Exception
 import           GHC.Float (double2Int)
 import           System.Directory
@@ -73,9 +75,12 @@ createReadPeaksForNode root tzip =
         putStrLn $ "checking for peak: " ++ path
         needsRegen <- not <$> doesFileExist path
         when needsRegen $ genPeakFile path expr
+      doStream (path, expr) = fmap snd $ Thread.forkIO $ do
+        checkAndRegen (path, expr)
+        readPeakFile path
   in do
-       mapM_ checkAndRegen $ zip paths exprs
-       mapM readPeakFile paths
+       results <- mapM doStream $ zip paths exprs
+       mapM (Thread.result =<<) results
 
 updatePeak :: Peak -> Double -> Peak
 updatePeak (Pk l h) x = Pk (min l x') (max h x')
@@ -88,7 +93,7 @@ genPeakFile fp expr =
   bracket opener
           closer
           $ \h -> run =<< compile expr (joinI $
-            I.group pksz ><> I.mapStream (V.foldl' updatePeak mempty)
+            I.group pksz ><> parE (I.mapStream (V.foldl' updatePeak mempty))
             $ writePkStream h)
  where
   lockfile = fp <.> "lck"
@@ -129,7 +134,7 @@ readPeakFile fp = go
       Nothing -> threadDelay 400 >> go
 
 writePkStream :: Handle -> Iteratee [Peak] IO ()
-writePkStream h = joinI $ I.group 1024 $ I.mapM_ ifn
+writePkStream h = parI . joinI $ I.group 1024 $ I.mapM_ ifn
  where
   ifn xs = toByteStringIO (BS.hPut h) $ fromWriteList (\(Pk l hi) ->
              writeInt16le l `mappend` writeInt16le hi) xs
