@@ -55,8 +55,9 @@ instance Parse NodeRef where
        <|> (word8 1 *> (RelPath <$> jparse <*> jparse))
 
 instance Parse StreamT where
-  jparse = (word8 0 *> (Cut <$> jparse <*> jparse <*> jparse))
-       <|> (word8 1 *> (Insert <$> jparse <*> jparse <*> jparse <*>
+  jparse = (word8 0 *> (Cut  <$> jparse <*> jparse <*> jparse))
+       <|> (word8 1 *> (Mute <$> jparse <*> jparse <*> jparse))
+       <|> (word8 2 *> (Insert <$> jparse <*> jparse <*> jparse <*>
                                    jparse <*> jparse <*> jparse))
        <|> (word8 3 *> (ST.Mix <$> jparse <*> jparse <*> jparse <*>
                                    jparse <*> jparse <*> jparse))

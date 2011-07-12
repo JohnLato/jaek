@@ -63,9 +63,11 @@ instance Build NodeRef where
 instance Build StreamT where
   build (Cut cn off dur) =
     mconcat [fromWord8 0, build cn, build off, build dur]
-  build (Insert c1 nr c2 off1 off2 dur) = mconcat [fromWord8 1
+  build (Mute cn off dur) =
+    mconcat [fromWord8 1, build cn, build off, build dur]
+  build (Insert c1 nr c2 off1 off2 dur) = mconcat [fromWord8 2
     , build c1, build nr, build c2, build off1, build off2, build dur]
-  build (ST.Mix c1 nr c2 off1 off2 dur) = mconcat [fromWord8 2
+  build (ST.Mix c1 nr c2 off1 off2 dur) = mconcat [fromWord8 3
     , build c1, build nr, build c2, build off1, build off2, build dur]
 
 instance Build Node where
