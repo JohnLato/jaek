@@ -107,9 +107,8 @@ insertSilence :: SampleCount -> SampleCount -> StreamExpr -> StreamExpr
 insertSilence off dur expr =
   let r1 = Region expr 0 off
       sl = GenSource Null dur
-      r2 = Region expr (off+dur) (getDur expr - (off+dur))
+      r2 = Region expr off (getDur expr - off)
   in  cutCleanup $ StreamSeq [r1, sl, r2]
-  
 
 -- | insert @StreamExpr b@ into @StreamExpr a@ at @dstOff@.
 -- 
