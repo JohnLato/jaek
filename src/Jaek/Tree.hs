@@ -155,7 +155,7 @@ getExpr ref chn zp = do
 applyTransform :: TreeZip -> [StreamExpr] -> StreamT -> [StreamExpr]
 applyTransform _ expr (Cut chn off dur) = modifyListAt chn (cut off dur) expr
 applyTransform _ expr (Mute chn off dur) =
-  modifyListAt chn (insertSilence off dur) expr
+  modifyListAt chn (insertSilence off dur . cut off dur) expr
 applyTransform z expr (Insert dstChn ref srcChn dstOff srcOff dur) =
   case getExpr ref srcChn z of
     Nothing  -> []

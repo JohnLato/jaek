@@ -57,8 +57,11 @@ keyactOnSelect sz vm sels key
   unT :: [(a,b)] -> (a,[b])
   unT xs = let ix = fst $ head xs
            in (ix, map snd xs)
-  reT :: [(a, [(b,c)])] -> [(a,b,c)]
-  reT = concatMap (\(a, ys) -> map (\(b,c) -> (a,b,c)) ys)
+  -- reT :: Num b => [(a, [(b,b)])] -> [(a,b,b)]
+  -- reT converts the channelized data back to unchannelized tuples,
+  -- and also converts from the start/end representation to offset/dur
+  -- representation
+  reT = concatMap (\(a, ys) -> map (\(b,c) -> (a,b,c-b)) ys)
 
   -- this slightly convoluted function removes overlapping segments
   -- in each channel.
