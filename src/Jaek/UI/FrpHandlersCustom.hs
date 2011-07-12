@@ -11,6 +11,7 @@ where
 
 import Jaek.Base
 import Jaek.Render
+import Jaek.Peaks
 import Jaek.StreamExpr
 import Jaek.Tree
 import Jaek.UI.Focus
@@ -23,6 +24,7 @@ import Diagrams.Backend.Cairo
 import Data.Record.Label
 
 import Data.Maybe
+import Control.Concurrent.STM
 
 -- | generate the behavior of the zipper and the viewmap.  Since
 -- the viewmap depends on the zipper, the two need to be created
@@ -74,11 +76,12 @@ genBFocus bDraw clicks eFocChange eTreeChange = (beh, eFilt)
 
 -- | generate a Behavior Diagram producer
 genBDraw ::
-  Behavior FilePath
+  TVar PathMap
+  -> Behavior FilePath
   -> Behavior TreeZip
   -> Behavior Focus
   -> Behavior (Int, Int)
   -> Behavior ViewMap
   -> Behavior (AnnDiagram Cairo R2 (First TreePath))
-genBDraw bRoot bZip getFocus bsize bview =
-  drawAt <$> bRoot <*> bZip <*> getFocus <*> bsize <*> bview
+genBDraw mpRef bRoot bZip getFocus bsize bview =
+  drawAt mpRef <$> bRoot <*> bZip <*> getFocus <*> bsize <*> bview

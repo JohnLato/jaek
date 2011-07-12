@@ -28,13 +28,11 @@ getDur :: View -> SampleCount
 getDur (WaveView _ dur) = dur
 getDur _                = 44100    -- default duration, can do better
 
--- for some reason the drawing isn't being shared properly.  I'm not sure if
--- it's Haskell not storing a function or Reactive.Banana.
-drawAt _root zp Nothing    (x,_) _ =
+drawAt _mpRef _root zp Nothing    (x,_) _ =
   toGtkCoords . scale (0.25* fI x) . drawTree $ fromZipper zp
-drawAt _root zp (Just [])  (x,_) _ =
+drawAt _mpRef _root zp (Just [])  (x,_) _ =
   toGtkCoords . scale (0.25* fI x) . drawTree $ fromZipper zp
-drawAt root zp (Just ref) (x,y) vmap =
+drawAt mpRef root zp (Just ref) (x,y) vmap =
   maybe (toGtkCoords . scale (0.25* fI x) . drawTree $ fromZipper zp)
         (\(z', v) -> let d = alignB
                              . vcat' (with {catMethod=Distrib, sep=1.001})
@@ -42,7 +40,7 @@ drawAt root zp (Just ref) (x,y) vmap =
                              . reverse
                              . parMap rseq (renderPeaks off dur x)
                              . unsafePerformIO
-                             $ createReadPeaksForNode root z'
+                             $ createReadPeaksForNode root mpRef z'
                          (_dx,dy) = size2D d
                          yscale = fI y / dy
                          off = fI $ getOffset v

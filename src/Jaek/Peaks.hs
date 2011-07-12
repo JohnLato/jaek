@@ -1,9 +1,12 @@
 {-# LANGUAGE MultiParamTypeClasses
             ,TypeFamilies
-            ,FlexibleContexts #-}
+            ,FlexibleContexts
+            ,TupleSections #-}
 
 module Jaek.Peaks (
   Peak (..)
+ ,PathMap
+ ,defaultPathMap
  ,pksz
  ,genPeaksForNode
  ,createReadPeaksForNode
@@ -23,6 +26,8 @@ import qualified Data.Iteratee as I
 import           Data.Iteratee.Parallel
 import           Blaze.ByteString.Builder
 
+import           Data.Digest.Murmur as Hash
+import qualified Data.HashMap.Strict as Map
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Generic.Base as G
 import qualified Data.Vector.Storable as V
@@ -31,11 +36,13 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.ByteString as BS
 import           Data.Bits
 import           Data.Int
+import           Data.Maybe
 import           Data.Monoid
-import           Data.List (intercalate)
-import           Data.Tree
+import qualified Data.Set as Set
 
+import           Control.Arrow (first)
 import           Control.Concurrent
+import           Control.Concurrent.STM
 import qualified Control.Concurrent.Thread as Thread
 import           Control.Exception
 import           GHC.Float (double2Int)
@@ -49,27 +56,52 @@ data Peak = Pk {-# UNPACK #-} !Int16 {-# UNPACK #-} !Int16
 pksz :: Int
 pksz = 2048
 
-genPeakPath :: FilePath -> HTree -> [FilePath]
-genPeakPath root (Node node _) = map mkFp $ take nc [(0 :: Int) ..]
+-- A map to the hash values which become peak filepaths
+type PathMap = Map.HashMap StreamExpr Hash.Hash
+
+defaultPathMap :: IO (TVar PathMap)
+defaultPathMap = newTVarIO Map.empty
+
+-- | get the path for a the peak file of a StreamExpr.  If it's not in the map
+-- already, return a new map with it added.
+genExprPath :: FilePath -> PathMap -> StreamExpr -> (FilePath, Maybe PathMap)
+genExprPath root mp str = maybe uRes fromMap $ Map.lookup str mp
  where
-  tp = nodePath node
-  nc = numChans node
-  mkFp ix = root </> peakDir </> intercalate "_" (map show tp) <.> show ix
+  genPath slt = slt + hash str
+  used = Set.fromList $ Map.elems mp
+  unique = head . dropWhile (`Set.member` used) $ map genPath [0..]
+  fromMap hsh = (root </> peakDir </> show hsh <.> "jpk", Nothing)
+  uRes = (root </> peakDir </> show unique <.> "jpk"
+         , Just $ Map.insert str unique mp)
+
+genPeakPath :: FilePath -> PathMap -> HTree -> ([FilePath], Maybe PathMap)
+genPeakPath root mp htree = foldr accf ([], Nothing) $ getExprs htree
+ where
+  accf expr (paths, mMap) =
+    first (:paths) $ genExprPath root (fromMaybe mp mMap) expr
 
 -- | create peak files for the currently-selected node
-genPeaksForNode :: FilePath -> TreeZip -> IO ()
-genPeaksForNode root tzip =
+genPeaksForNode :: FilePath -> TVar PathMap -> TreeZip -> IO ()
+genPeaksForNode root mpRef tzip =
   let htree = hole tzip
-      paths = genPeakPath root htree
       exprs = getExprs htree
-  in  mapM_ (uncurry genPeakFile) $ zip paths exprs
+  in do
+    paths <- atomically $ do
+      mp <- readTVar mpRef
+      let (paths, mp') = genPeakPath root mp htree
+      maybe (return ()) (writeTVar mpRef) mp'
+      return paths
+    mapM_ (uncurry genPeakFile) $ zip paths exprs
 
 -- | read peak files for a node.  If the files don't exist, create them
 -- first.
-createReadPeaksForNode :: FilePath -> TreeZip -> IO [U.Vector Peak]
-createReadPeaksForNode root tzip =
+createReadPeaksForNode ::
+  FilePath
+  -> TVar PathMap
+  -> TreeZip
+  -> IO [U.Vector Peak]
+createReadPeaksForNode root mpRef tzip =
   let htree = hole tzip
-      paths = genPeakPath root htree
       exprs = getExprs htree
       checkAndRegen (path, expr) = do
         putStrLn $ "checking for peak: " ++ path
@@ -79,8 +111,13 @@ createReadPeaksForNode root tzip =
         checkAndRegen (path, expr)
         readPeakFile path
   in do
-       results <- mapM doStream $ zip paths exprs
-       mapM (Thread.result =<<) results
+    paths <- atomically $ do
+      mp <- readTVar mpRef
+      let (paths, mp') = genPeakPath root mp htree
+      maybe (return ()) (writeTVar mpRef) mp'
+      return paths
+    results <- mapM doStream $ zip paths exprs
+    mapM (Thread.result =<<) results
 
 updatePeak :: Peak -> Double -> Peak
 updatePeak (Pk l h) x = Pk (min l x') (max h x')

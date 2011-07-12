@@ -8,6 +8,7 @@ where
 import           Graphics.UI.Gtk
 
 import           Jaek.Base
+import           Jaek.Peaks (defaultPathMap)
 import           Jaek.Project
 import           Jaek.Tree (HTree)
 import           Jaek.UI.Actions
@@ -53,6 +54,7 @@ createMainWindow iProject iTree = do
   -- create new widgets
   mainArea <- drawingAreaNew
   drawRef  <- initDrawRef mainArea
+  mpRef    <- defaultPathMap
 
   -- add FRP handler stuff...
   widgetAddEvents mainArea
@@ -80,7 +82,7 @@ createMainWindow iProject iTree = do
                                takeFileName  <$> bFName)
         (bZip, bView) = genBZip iTree (eNewDoc <> eOpenDoc) eNewSource
                           treeMods eFocChange
-        bDraw = genBDraw bRoot bZip bFocus bSz bView
+        bDraw = genBDraw mpRef bRoot bZip bFocus bSz bView
         (bFocus, eFocChange) = genBFocus bDraw clicks
                                 (keynavActions bFocus bZip eKeypresses)
                                 $ apply
