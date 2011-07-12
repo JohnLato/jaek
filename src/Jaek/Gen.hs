@@ -17,8 +17,16 @@ import           Data.Iteratee.ListLike ()
 import qualified Data.Vector.Storable as V
 
 import           Data.Data
+import           Data.Digest.Murmur
+import qualified Data.Hashable as H
 
 data GenFunc = Null deriving (Eq, Show, Data, Typeable)
+
+instance Hashable GenFunc where
+  hashGen Null = salt 0x0
+
+instance H.Hashable GenFunc where
+  hash Null = 1
 
 type Vec = V.Vector Double
 

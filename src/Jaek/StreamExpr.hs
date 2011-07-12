@@ -32,6 +32,9 @@ import qualified Data.Vector.Storable as V
 import           Data.Generics.Uniplate.Direct
 
 import           Data.Data
+import           Data.Digest.Murmur
+import qualified Data.Hashable as H
+
 import           Data.List (mapAccumL)
 import           Control.Monad.CatchIO
 
@@ -54,6 +57,26 @@ instance Uniplate StreamExpr where
 instance Biplate [StreamExpr] StreamExpr where
   biplate [] = plate []
   biplate (x:xs) = plate (:) |* x ||* xs
+
+instance Hashable StreamExpr where
+  hashGen (FileSource fp _af cn off dur) =
+    salt 1 `combine` hashGen fp `combine` hashGen cn
+    `combine` hashGen off `combine` hashGen dur
+  hashGen (GenSource g dur) = salt 2 `combine` hashGen g `combine` hashGen dur
+  hashGen (Region expr off dur) = salt 3 `combine`
+    hashGen expr `combine` hashGen off `combine` hashGen dur
+  hashGen (StreamSeq exprs) = salt 4 `combine` hashGen exprs
+  hashGen (Mix s1 s2)       = salt 5 `combine` hashGen s1 `combine` hashGen s2
+
+instance H.Hashable StreamExpr where
+  hash (FileSource fp _af cn off dur) =
+    1 `H.combine` H.hash fp `H.combine` H.hash cn
+    `H.combine` H.hash off `H.combine` H.hash dur
+  hash (GenSource g dur) = 2 `H.combine` H.hash g `H.combine` H.hash dur
+  hash (Region expr off dur) = 3 `H.combine`
+    H.hash expr `H.combine` H.hash off `H.combine` H.hash dur
+  hash (StreamSeq exprs) = 4 `H.combine` H.hash exprs
+  hash (Mix s1 s2)       = 5 `H.combine` H.hash s1 `H.combine` H.hash s2
 
 getDur :: StreamExpr -> SampleCount
 getDur (FileSource _ _ _ _ dur) = dur
