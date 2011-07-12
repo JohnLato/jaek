@@ -54,7 +54,7 @@ bSelection bSize bFocus bZip clicks releases drags motions =
   -- otherwise false
   annClicks = FRP.apply ((\sel clk -> (ff sel clk, clk)) <$> bS1) clicks
   bMask :: Behavior (u -> Bool)
-  bMask = stepper (const False) $ (const . fst <$> annClicks)
+  bMask = stepper (const False) (const . fst <$> annClicks)
   filtCurClk = mapFilterE snd fst annClicks <> filterApply bMask releases
 
 
@@ -102,7 +102,7 @@ dragToRegions (xSz, ySz) zp vm drg =
   nc = liftT numChans t
   (xStart,xEnd) = (x2sc . uncurry min &&& x2sc . uncurry max) $ getL dragXs drg
   x2sc x = off + floor (fI dur * (x / fI xSz))
-  chnBorder y = (round $ fI nc * (y / fI ySz)) :: Int
+  chnBorder y = round $ fI nc * (y / fI ySz) :: Int
 
 bCurSelection :: Event DragEvent -> Event () -> Behavior [DragEvent]
 bCurSelection eDrags eClear =

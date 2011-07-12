@@ -28,7 +28,7 @@ type DrawRef m = TVar (AnnDiagram Cairo R2 m, View, Focus, (Int,Int))
 initDrawRef :: Monoid m => DrawingArea -> IO (DrawRef m)
 initDrawRef da = do
   sz <- widgetGetSize da
-  newTVarIO (mempty, (FullView 0 0), Nothing, sz)
+  newTVarIO (mempty, FullView 0 0, Nothing, sz)
 
 drawOnExpose ::
   Monoid m
@@ -67,7 +67,7 @@ drawSelection ::
   (Monoid m, Renderable (Path R2) b, Backend b R2)
   => [DragEvent]
   -> AnnDiagram b R2 m
-drawSelection drags = foldr (\de d -> drawDrag de `atop` d) mempty drags
+drawSelection = foldr (\de d -> drawDrag de `atop` d) mempty
 
 drawDrag ::
   (Monoid m, Renderable (Path R2) b, Backend b R2)
