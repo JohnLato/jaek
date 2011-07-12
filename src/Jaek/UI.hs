@@ -81,8 +81,10 @@ createMainWindow iProject iTree = do
         (bZip, bView) = genBZip iTree (eNewDoc <> eOpenDoc) eNewSource
                           treeMods eFocChange
         bDraw = genBDraw bRoot bZip bFocus bSz bView
-        (bFocus, eFocChange) = genBFocus bDraw clicks $ apply
-                                ((\tz tmf -> tmf tz) <$> bZip) treeMods
+        (bFocus, eFocChange) = genBFocus bDraw clicks
+                                (keynavActions bFocus bZip eKeypresses)
+                                $ apply
+                                  ((\tz tmf -> tmf tz) <$> bZip) treeMods
     reactimate $ apply (drawOnExpose mainArea drawRef <$> bDraw
                           <*> bView <*> bFocus <*> bSels)
                        eMainExpose

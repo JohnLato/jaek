@@ -1,5 +1,6 @@
 module Jaek.UI.Input.Actions (
   keyActions
+ ,keynavActions
 )
 
 where
@@ -18,7 +19,18 @@ import Data.Function as F
 import Data.List
 import Data.Ord
 
-keynavActions :: Behavior TreeZip -> Event KeyVal -> Event Focus
+keynavActions ::
+  Behavior Focus
+  -> Behavior TreeZip
+  -> Event KeyVal
+  -> Event Focus
+keynavActions bFoc bZip eKey =
+  filterMaybes $ apply (keynav <$> bFoc <*> bZip) eKey
+
+keynav :: Focus -> TreeZip -> KeyVal -> Maybe Focus
+keynav _foc _tz keyval
+  | keyval == 65307 = Just Nothing
+  | otherwise       = Nothing
 
 keyActions :: 
   Behavior (Int,Int)

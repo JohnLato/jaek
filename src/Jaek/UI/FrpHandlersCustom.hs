@@ -55,9 +55,10 @@ genBZip iTree eNewDoc eNewSource eTreeMod eFocChange =
 --  it's important to only trigger focus events when the focus actually changes
 genBFocus :: Behavior (AnnDiagram Cairo R2 (First TreePath))
   -> Event ClickEvent
+  -> Event Focus
   -> Event TreeZip
   -> (Behavior Focus, Event Focus )
-genBFocus bDraw clicks eTreeChange = (beh, eFilt)
+genBFocus bDraw clicks eFocChange eTreeChange = (beh, eFilt)
  where
   beh    = stepper Nothing eFilt
   eFilt  = filterApply ((/=) <$> beh) eFocus
@@ -68,7 +69,8 @@ genBFocus bDraw clicks eTreeChange = (beh, eFilt)
                                                       (P $ getL xyClick clk) )
                                   <$> bDraw)
                       (filterApply ((const . isTree) <$> beh) clicks) )
-            -- change from Wave to Tree not implemented yet
+            -- change from Wave to Tree
+           <> eFocChange
 
 -- | generate a Behavior Diagram producer
 genBDraw ::
