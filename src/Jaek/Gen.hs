@@ -40,4 +40,8 @@ enumGen Null =
   let nullChunk = V.replicate defaultBufSize 0
       nullList  = nullChunk : nullList
   in  enumList nullList
+enumGen (ConstF x) =
+  let chunk = V.replicate defaultBufSize x
+      lst   = chunk : lst
+  in enumList lst
 
