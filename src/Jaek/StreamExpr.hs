@@ -94,11 +94,13 @@ compile (FileSource fp af chan off dur) i =
   in enumAudioIteratee fp $ do
        L.drop (off*numChans)
        joinI $ (getChannel numChans chan ><> L.takeUpTo dur) i
-compile (GenSource gfunc dur) i = enumGen gfunc $ joinI (L.takeUpTo dur i)
+compile (GenSource gfunc dur) i = enumGen gfunc (L.takeUpTo dur i) >>= myRun
 compile (Region expr off dur) i = compile expr
-                                    (L.drop off >> joinI (L.takeUpTo dur i))
+                                    (L.drop off >> L.takeUpTo dur i) >>= myRun
 compile (StreamSeq exprs) i = foldr ((>=>) . compile) enumEof exprs i
 compile (Mix s1 s2) i       = mergeEnums (compile s1) (compile s2) mixEtee i
+
+myRun i = either throwErr id <$> tryRun i
 
 mixEtee :: (Functor m, Monad m) => Enumeratee Vec Vec (Iteratee Vec m) a
 mixEtee = L.mergeByChunks (V.zipWith (+)) id id
