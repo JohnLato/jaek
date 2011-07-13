@@ -91,9 +91,9 @@ compile ::
   -> Enumerator Vec m a
 compile (FileSource fp af chan off dur) i =
   let numChans = fromIntegral $ numberOfChannels af
-  in enumAudioIteratee fp $ do
+  in myRun =<< (enumAudioIteratee fp $ do
        L.drop (off*numChans)
-       joinI $ (getChannel numChans chan ><> L.takeUpTo dur) i
+       (getChannel numChans chan ><> L.takeUpTo dur) i )
 compile (GenSource gfunc dur) i = enumGen gfunc (L.takeUpTo dur i) >>= myRun
 compile (Region expr off dur) i = compile expr
                                     (L.drop off >> L.takeUpTo dur i) >>= myRun
