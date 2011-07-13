@@ -39,12 +39,16 @@ instance Build Int where
 instance Build Integer where
   build = fromInt64le . fI
 
+instance Build Double where
+  build d = U.fromString (show d) `mappend` U.fromString "z"
+
 instance Build AudioFormat where
   build (AudioFormat nc sr bd) =
     fromWrite . mconcat $ map (writeInt64le . fI) [nc,sr,bd]
 
 instance Build GenFunc where
-  build (Null) = fromInt16le 0
+  build Null       = fromWord8 0
+  build (ConstF x) = fromWord8 1 `mappend` build x
 
 instance Build StreamExpr where
   build (FileSource fp af cn off dur) =

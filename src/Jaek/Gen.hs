@@ -20,13 +20,18 @@ import           Data.Data
 import           Data.Digest.Murmur
 import qualified Data.Hashable as H
 
-data GenFunc = Null deriving (Eq, Show, Data, Typeable)
+data GenFunc =
+   Null
+ | ConstF Double
+ deriving (Eq, Show, Data, Typeable)
 
 instance Hashable GenFunc where
-  hashGen Null = salt 0x0
+  hashGen Null       = salt 0x0
+  hashGen (ConstF x) = salt 0x1 `combine` hashGen x
 
 instance H.Hashable GenFunc where
-  hash Null = 1
+  hash Null       = 1
+  hash (ConstF x) = 2 `H.combine` H.hash x
 
 type Vec = V.Vector Double
 

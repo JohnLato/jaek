@@ -15,6 +15,7 @@ import           Jaek.Tree
 import           Sound.Iteratee (AudioFormat (..))
 import           Data.Attoparsec as A
 import           Data.Attoparsec.Binary
+import           Data.Attoparsec.Char8
 import           Data.ByteString.UTF8 (toString)
 
 import           Data.Tree
@@ -38,8 +39,12 @@ instance Parse Integer where
 instance Parse AudioFormat where
   jparse = AudioFormat <$> jparse <*> jparse <*> jparse
 
+instance Parse Double where
+  jparse = try (double <* char 'z')
+
 instance Parse GenFunc where
-  jparse = Null <$ word16le 0
+  jparse = (Null <$ word8 0)
+    <|> (word8 1 *> (ConstF <$> jparse))
 
 instance Parse StreamExpr where
   jparse =
