@@ -106,7 +106,7 @@ createReadPeaksForNode root mpRef tzip =
       checkAndRegen (path, expr) = do
         putStrLn $ "checking for peak: " ++ path
         needsRegen <- not <$> doesFileExist path
-        when needsRegen $ genPeakFile path expr
+        when needsRegen $ putStrLn ("needs regen " ++ path) >> genPeakFile path expr
       doStream (path, expr) = fmap snd $ Thread.forkIO $ do
         checkAndRegen (path, expr)
         readPeakFile path
