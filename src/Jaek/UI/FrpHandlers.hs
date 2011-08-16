@@ -32,7 +32,7 @@ import Jaek.UI.FrpTypes as F
 import Reactive.Banana as B
 import Diagrams.Prelude ((<>))
 
-import Data.Record.Label
+import Data.Label as L
 
 import Control.Category
 import Data.Maybe
@@ -56,7 +56,7 @@ dragYs :: DragEvent :-> (Double, Double)
 dragYs = Lens $ (,) <$> fst `for` (yPos . dragStart) <*> snd `for` yDragEnd
 
 releaseFromDrag :: DragEvent -> ClickEvent
-releaseFromDrag (DragE strt x y) = ClickE ReleaseC (getL clickMods strt) x y
+releaseFromDrag (DragE strt x y) = ClickE ReleaseC (L.get clickMods strt) x y
 
 addClick :: ClickEvent -> DragAcc -> DragAcc
 addClick (ClickE ReleaseC _ x y) (Start e) = Full $ DragE e x y

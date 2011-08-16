@@ -15,7 +15,7 @@ import Jaek.UI.Views
 
 import Reactive.Banana  as FRP
 import Diagrams.Prelude as D
-import Data.Record.Label
+import Data.Label as L
 
 import Control.Arrow
 
@@ -38,9 +38,9 @@ bSelection bSize bFocus bZip clicks releases drags motions =
   (\xs mx -> maybe xs (:xs) mx) <$> bS1 <*> bS2
  where
   ff sel clk = not (any (\drg ->
-     contains' (fromCorners (P $ getL xyStart drg)
-                            (P $ getL xyEnd drg))
-       $ P $ getL xyClick clk) sel)
+     contains' (fromCorners (P $ L.get xyStart drg)
+                            (P $ L.get xyEnd drg))
+       $ P $ L.get xyClick clk) sel)
   ff' = (\sel clk -> not (clickIsAdditive clk) && ff sel clk) <$> bS1
   bS1 = (\w f z s -> map (channelizeDrag w f z) s) <$> bSize
           <*> bFocus <*> bZip
@@ -61,10 +61,10 @@ bSelection bSize bFocus bZip clicks releases drags motions =
 -- | check if a drag event should be added to current selection (shift-drag)
 -- or replace it.
 dragIsAdditive :: DragEvent -> Bool
-dragIsAdditive = clickIsAdditive . getL dragStart
+dragIsAdditive = clickIsAdditive . L.get dragStart
 
 clickIsAdditive :: ClickEvent -> Bool
-clickIsAdditive = any (== ShiftE) . getL clickMods
+clickIsAdditive = any (== ShiftE) . L.get clickMods
 
 -- | The (X,Y) coordinates of a DragEvent need to be adjusted to match
 -- the channels in a WaveView.
@@ -72,7 +72,7 @@ channelizeDrag :: (Int, Int) -> Focus -> TreeZip -> DragEvent -> DragEvent
 channelizeDrag (_, ySz) focus zp drg
   | isTree focus = drg
   | nc <= 1      = drg
-  | otherwise = modL dragYs ((inf *** inf) >>> adjf >>> (outf *** outf)) drg
+  | otherwise = modify dragYs ((inf *** inf) >>> adjf >>> (outf *** outf)) drg
  where
   nc = liftT numChans $ hole zp
   adjf (s,e) = if e >= s then (floor s, ceiling e) else (ceiling s, floor e)
@@ -95,12 +95,12 @@ dragToRegions (xSz, ySz) zp vm drg =
    . uncurry enumFromTo
    . (uncurry min &&& (subtract 1 . uncurry max))
    . (chnBorder *** chnBorder)
-   $ getL dragYs drg
+   $ L.get dragYs drg
  where
   t  = hole zp
   WaveView off dur = getView vm t
   nc = liftT numChans t
-  (xStart,xEnd) = (x2sc . uncurry min &&& x2sc . uncurry max) $ getL dragXs drg
+  (xStart,xEnd) = (x2sc . uncurry min &&& x2sc . uncurry max) $ L.get dragXs drg
   x2sc x = off + floor (fI dur * (x / fI xSz))
   chnBorder y = round $ fI nc * (y / fI ySz) :: Int
 

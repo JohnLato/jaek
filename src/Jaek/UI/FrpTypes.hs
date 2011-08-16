@@ -11,7 +11,7 @@ import Graphics.UI.Gtk
 import Reactive.Banana as B
 import Data.Data
 
-import Data.Record.Label
+import Data.Label
 
 data ClickType = SingleC | DoubleC | TripleC | ReleaseC
   deriving (Eq, Show, Enum, Ord, Data, Typeable)

@@ -21,7 +21,7 @@ import Jaek.UI.Views
 import Reactive.Banana  as FRP
 import Diagrams.Prelude as D
 import Diagrams.Backend.Cairo
-import Data.Record.Label
+import Data.Label as L
 
 import Data.Maybe
 import Control.Concurrent.STM
@@ -68,7 +68,7 @@ genBFocus bDraw clicks eFocChange eTreeChange = (beh, eFilt)
            <> filterE isJust (
             -- change from Tree to Wave
             FRP.apply ((\d clk -> getFirst $ runQuery (query d)
-                                                      (P $ getL xyClick clk) )
+                                                      (P $ L.get xyClick clk) )
                                   <$> bDraw)
                       (filterApply ((const . isTree) <$> beh) clicks) )
             -- change from Wave to Tree
