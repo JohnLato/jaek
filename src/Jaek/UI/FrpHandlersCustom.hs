@@ -59,10 +59,11 @@ genBFocus :: Behavior (AnnDiagram Cairo R2 (First TreePath))
   -> Event ClickEvent
   -> Event Focus
   -> Event TreeZip
-  -> (Behavior Focus, Event Focus )
-genBFocus bDraw clicks eFocChange eTreeChange = (beh, eFilt)
+  -> Discrete Focus
+genBFocus bDraw clicks eFocChange eTreeChange = dfoc
  where
-  beh    = stepper Nothing eFilt
+  dfoc   = stepperD Nothing eFilt
+  beh    = value dfoc
   eFilt  = filterApply ((/=) <$> beh) eFocus
   eFocus = (Just . getPath <$> eTreeChange)
            <> filterE isJust (

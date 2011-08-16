@@ -73,6 +73,8 @@ createMainWindow iProject iTree = do
     eRelease    <- releaseEvents mainArea
     motions     <- motionEvents mainArea
     let (drags, _ndReleases) = dragEvents (clicks <> eRelease)
+        bFocus      = value dFocus
+        eFocChange  = changes dFocus
         bFiltInWave = const . isWave <$> bFocus
         treeMods = keyActions bSz bView bSels $
                      filterApply bFiltInWave eKeypresses
@@ -83,10 +85,9 @@ createMainWindow iProject iTree = do
         (bZip, bView) = genBZip iTree (eNewDoc <> eOpenDoc) eNewSource
                           treeMods eFocChange
         bDraw = genBDraw mpRef bRoot bZip bFocus bSz bView
-        (bFocus, eFocChange) = genBFocus bDraw clicks
-                                (keynavActions bFocus bZip eKeypresses)
-                                $ apply
-                                  ((\tz tmf -> tmf tz) <$> bZip) treeMods
+        dFocus = genBFocus bDraw clicks
+                           (keynavActions bFocus bZip eKeypresses)
+                           $ apply ((\tz tmf -> tmf tz) <$> bZip) treeMods
     reactimate $ apply (drawOnExpose mainArea drawRef <$> bDraw
                           <*> bView <*> bFocus <*> bSels)
                        eMainExpose
