@@ -75,8 +75,6 @@ createMainWindow iProject iTree = do
         bFocus  = value dFocus
         eFocus  = changes dFocus
         bFiltInWave = const . isWave <$> bFocus
-        treeMods = keyActions bSz bView selCtrl $
-                     filterApply bFiltInWave eKeys
         selCtrl  = selectCtrl bSz dFocus bZip clicks eRelease drags motions
         bFName = stepper iProject (fst <$> (eNewDoc <> eOpenDoc))
         (bRoot, _bProjName) = (takeDirectory <$> bFName,
@@ -90,7 +88,10 @@ createMainWindow iProject iTree = do
         -- need to keep several layers of control sets so that events can
         -- be propagated through them.
         ctrlSet1 = addController selCtrl []
-        ctrlSet2 = addController (keynavActions bFocus bZip eKeys) ctrlSet1
+        edCtrl1  = keyActions bSz bView selCtrl $ filterApply bFiltInWave eKeys
+        ctrlSet2 = addController (keynavActions bFocus bZip eKeys) $
+                   addController edCtrl1 ctrlSet1
+        treeMods = zipChangeSet ctrlSet2
 
     reactimate $ (drawOnExpose mainArea drawRef <$> bDraw <*>
                     value bView <*> bFocus <*> diagChangeSet ctrlSet2)

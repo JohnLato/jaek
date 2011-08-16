@@ -9,8 +9,9 @@ module Jaek.UI.Controllers.Base (
  -- * Functions
  -- ** ControlSet functions
  ,addController
- ,eFocChangeSet
  ,diagChangeSet
+ ,eFocChangeSet
+ ,zipChangeSet
  -- ** individual controller functions
  ,nullController
  ,defaultPred
@@ -109,6 +110,9 @@ filterControlSet cset clicks releases keys motions =
 
 eFocChangeSet :: ControlSet -> Event Focus
 eFocChangeSet = mconcat . map (extract eFocChange)
+
+zipChangeSet :: ControlSet -> Event (TreeZip -> TreeZip)
+zipChangeSet = mconcat . map (extract eZipChange)
 
 -- | Get a behavior of all Diagram modifier functions from the
 -- ControlSet, with the first Controllers applied earliest.

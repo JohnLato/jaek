@@ -17,15 +17,34 @@ import Reactive.Banana
 import Data.Function as F
 import Data.List
 import Data.Ord
+import Data.Maybe (isJust)
+import Data.Monoid (Monoid (..))
 
 keyActions :: 
   Discrete (Int,Int)
   -> Discrete ViewMap
   -> Controller [DragEvent]
   -> Event KeyVal
-  -> Event (TreeZip -> TreeZip)
+  -- -> Event (TreeZip -> TreeZip)
+  -> Controller ()
 keyActions bSz bVm selCtrl eKey =
-  filterMaybes $ (keyactOnSelect <$> bSz <*> bVm <*> dState selCtrl) <@> eKey
+  Controller ((\sAct sel -> sAct && not (null sel))
+                <$> dActive selCtrl <*> dState selCtrl)
+                -- active with current selection
+             (pure ())
+             defaultPred
+             defaultPred
+             keyPred
+             defaultPred
+             never
+             zChng
+             (pure id)
+             never
+             never
+ where
+  zChng = filterMaybes $
+            (keyactOnSelect <$> bSz <*> bVm <*> dState selCtrl) <@> eKey
+  keyPred _ k = isJust $ keyactOnSelect undefined mempty [undefined] k
 
 keyactOnSelect ::
   (Int,Int)
