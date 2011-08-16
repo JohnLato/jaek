@@ -113,7 +113,7 @@ releaseEvents widget = event1 $ \k ->
 motionEvents ::
   WidgetClass w
   => w
-  -> NetworkDescription (Event ([EventModifier], Double, Double))
+  -> NetworkDescription (Event MotionEvent)
 motionEvents widget = event1 $ \k ->
  ignore $ on widget motionNotifyEvent $ tryEvent $ do
     (x,y) <- eventCoordinates

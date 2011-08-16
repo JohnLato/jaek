@@ -1,4 +1,4 @@
-module Jaek.UI.WaveControl (
+module Jaek.UI.Controllers.Wave (
 
 )
 

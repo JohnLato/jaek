@@ -66,6 +66,8 @@ Executable jaek
                       ,Jaek.Tree
                       ,Jaek.UI
                       ,Jaek.UI.Actions
+                      ,Jaek.UI.Controllers.Base
+                      ,Jaek.UI.Controllers.Wave
                       ,Jaek.UI.Dialogs
                       ,Jaek.UI.FrpHandlers
                       ,Jaek.UI.FrpHandlersCustom
@@ -75,4 +77,3 @@ Executable jaek
                       ,Jaek.UI.MenuActionHandlers
                       ,Jaek.UI.Render
                       ,Jaek.UI.Views
-                      ,Jaek.UI.WaveControl

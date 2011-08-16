@@ -12,6 +12,7 @@ import           Jaek.Peaks (defaultPathMap)
 import           Jaek.Project
 import           Jaek.Tree (HTree)
 import           Jaek.UI.Actions
+import           Jaek.UI.Controllers
 import           Jaek.UI.Dialogs
 import           Jaek.UI.Focus
 import           Jaek.UI.FrpHandlersCustom
@@ -73,8 +74,8 @@ createMainWindow iProject iTree = do
     eRelease    <- releaseEvents mainArea
     motions     <- motionEvents mainArea
     let (drags, _ndReleases) = dragEvents (clicks <> eRelease)
-        bFocus      = value dFocus
-        eFocChange  = changes dFocus
+        bFocus  = value dFocus
+        eFocus  = changes dFocus
         bFiltInWave = const . isWave <$> bFocus
         treeMods = keyActions bSz bView bSels $
                      filterApply bFiltInWave eKeypresses
@@ -83,11 +84,14 @@ createMainWindow iProject iTree = do
         (bRoot, _bProjName) = (takeDirectory <$> bFName,
                                takeFileName  <$> bFName)
         (bZip, bView) = genBZip iTree (eNewDoc <> eOpenDoc) eNewSource
-                          treeMods eFocChange
-        bDraw = genBDraw mpRef bRoot bZip bFocus bSz bView
+                          treeMods eFocus
+        bDraw  = genBDraw mpRef bRoot bZip bFocus bSz bView
         dFocus = genBFocus bDraw clicks
-                           (keynavActions bFocus bZip eKeypresses)
+                           (eFocChangeSet ctrlSet)
                            $ apply ((\tz tmf -> tmf tz) <$> bZip) treeMods
+        ctrlSet :: ControlSet
+        ctrlSet = addController (keynavActions bFocus bZip eKeypresses) []
+
     reactimate $ apply (drawOnExpose mainArea drawRef <$> bDraw
                           <*> bView <*> bFocus <*> bSels)
                        eMainExpose
@@ -97,7 +101,7 @@ createMainWindow iProject iTree = do
     reactimate $ ( redrawF <$ eNewDoc)
               <> ( redrawF <$ eOpenDoc)
               <> ( redrawF <$ eNewSource)
-              <> ( redrawF <$ eFocChange)
+              <> ( redrawF <$ eFocus)
               <> ( redrawF <$ motions)
 
     -- save the document when requested

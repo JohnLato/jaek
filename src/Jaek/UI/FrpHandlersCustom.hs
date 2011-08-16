@@ -51,7 +51,7 @@ genBZip iTree eNewDoc eNewSource eTreeMod eFocChange =
                   in (z', updateMap z' MdNode mp)) <$> eTreeMod)
            <> ((\newFoc (zp,mp) -> (goToFocus zp newFoc, mp)) <$> eFocChange)
 
--- | Generate (Behavior (IO Focus), Event (IO Focus))
+-- | Generate @Discrete (IO Focus)@
 --  the @Event Focus@ are emitted when the focus changes, and can be used to
 --  trigger screen refreshes
 --  it's important to only trigger focus events when the focus actually changes

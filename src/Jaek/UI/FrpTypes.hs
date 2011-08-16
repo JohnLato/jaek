@@ -13,6 +13,8 @@ import Data.Data
 
 import Data.Label
 
+type MotionEvent = ([EventModifier], Double, Double)
+
 data ClickType = SingleC | DoubleC | TripleC | ReleaseC
   deriving (Eq, Show, Enum, Ord, Data, Typeable)
 

@@ -8,6 +8,7 @@ where
 import Graphics.UI.Gtk
 import Jaek.SegmentOlaps
 import Jaek.Tree
+import Jaek.UI.Controllers
 import Jaek.UI.Focus
 import Jaek.UI.FrpHandlers
 import Jaek.UI.Input.Drags
@@ -23,9 +24,11 @@ keynavActions ::
   Behavior Focus
   -> Behavior TreeZip
   -> Event KeyVal
-  -> Event Focus
-keynavActions bFoc bZip eKey =
-  filterMaybes $ apply (keynav <$> bFoc <*> bZip) eKey
+  -> Controller ()
+keynavActions bFoc bZip eKey = Controller (pure True) (pure ()) defaultPred defaultPred keyPred defaultPred eFocChange never never never never
+ where
+  keyPred _ kv = maybe True (const False) $ keynav undefined undefined kv
+  eFocChange = filterMaybes $ (keynav <$> bFoc <*> bZip) <@> eKey
 
 keynav :: Focus -> TreeZip -> KeyVal -> Maybe Focus
 keynav _foc _tz keyval
