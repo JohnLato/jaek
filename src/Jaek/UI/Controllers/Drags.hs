@@ -1,7 +1,7 @@
 {-# LANGUAGE TupleSections #-}
 
-module Jaek.UI.Input.Drags (
-  dSelection
+module Jaek.UI.Controllers.Drags (
+  selectCtrl
  ,dragToRegions
 )
 
@@ -9,8 +9,10 @@ where
 
 import Jaek.Base
 import Jaek.Tree
+import Jaek.UI.Controllers.Base
 import Jaek.UI.Focus
 import Jaek.UI.FrpHandlers
+import Jaek.UI.Render.Overlays
 import Jaek.UI.Views
 
 import Reactive.Banana  as FRP
@@ -25,7 +27,9 @@ import Control.Arrow
 -- event outside a selected area.
 -- 
 -- when a click occurs within the current selection, it should be ignored.
-dSelection
+-- 
+-- This controller is only active when a Wave is in focus.
+selectCtrl
   :: Discrete (Int,Int)
   -> Discrete Focus
   -> Discrete TreeZip
@@ -33,10 +37,21 @@ dSelection
   -> Event ClickEvent    -- ^ releases
   -> Event DragEvent
   -> Event ([EventModifier], Double, Double)
-  -> Discrete [DragEvent]
-dSelection bSize bFocus bZip clicks releases drags motions =
-  (\xs mx -> maybe xs (:xs) mx) <$> bS1 <*> bS2
+  -> Controller [DragEvent]
+selectCtrl bSize bFocus bZip clicks releases drags motions =
+  Controller (isWave <$> bFocus)
+             dSel
+             defaultPred
+             defaultPred
+             defaultPred
+             defaultPred
+             never
+             never
+             (compositeSelection <$> value dSel)
+             never
+             never
  where
+  dSel = (\xs mx -> maybe xs (:xs) mx) <$> bS1 <*> bS2
   ff sel clk = not (any (\drg ->
      contains' (fromCorners (P $ L.get xyStart drg)
                             (P $ L.get xyEnd drg))
@@ -56,7 +71,6 @@ dSelection bSize bFocus bZip clicks releases drags motions =
   bMask :: Behavior (u -> Bool)
   bMask = stepper (const False) (const . fst <$> annClicks)
   filtCurClk = mapFilterE snd fst annClicks <> filterApply bMask releases
-
 
 -- | check if a drag event should be added to current selection (shift-drag)
 -- or replace it.

@@ -67,13 +67,14 @@ Executable jaek
                       ,Jaek.UI
                       ,Jaek.UI.Actions
                       ,Jaek.UI.Controllers.Base
+                      ,Jaek.UI.Controllers.Drags
+                      ,Jaek.UI.Controllers.Nav
                       ,Jaek.UI.Controllers.Wave
                       ,Jaek.UI.Dialogs
                       ,Jaek.UI.FrpHandlers
                       ,Jaek.UI.FrpHandlersCustom
                       ,Jaek.UI.FrpTypes
-                      ,Jaek.UI.Input.Actions
-                      ,Jaek.UI.Input.Drags
                       ,Jaek.UI.MenuActionHandlers
                       ,Jaek.UI.Render
+                      ,Jaek.UI.Render.Overlays
                       ,Jaek.UI.Views

@@ -9,14 +9,12 @@ where
 
 import Graphics.UI.Gtk
 import Jaek.Base
-import Jaek.UI.FrpHandlers
 import Jaek.UI.FrpHandlersCustom
 import Jaek.UI.Views
 
 import Diagrams.Prelude
 import Diagrams.Backend.Cairo.Gtk
 import Diagrams.Backend.Cairo
-import Data.Colour (withOpacity)
 
 import qualified Data.HashMap.Strict as M
 
@@ -37,10 +35,10 @@ drawOnExpose ::
   -> AnnDiagram Cairo R2 m
   -> ViewMap
   -> Focus
-  -> [DragEvent]
+  -> (Diagram Cairo R2 -> Diagram Cairo R2)
   -> ()
   -> IO ()
-drawOnExpose da ref d view foc sel () = do
+drawOnExpose da ref d view foc drawMod () = do
   dw <- widgetGetDrawWindow da
   curSz <- widgetGetSize da
   (lastD, lastView, lastFoc, lastSz) <- readTVarIO ref
@@ -49,34 +47,8 @@ drawOnExpose da ref d view foc sel () = do
   let thisView = foc >>= flip M.lookup view
       chk    = (isWaveView <$> thisView) == Just True
   if foc == lastFoc && chk && thisView == Just lastView && curSz == lastSz
-    then renderToGtk dw (compositeSelection sel lastD)
+    then renderToGtk dw (drawMod (mempty <$ lastD))
     else do
       let newview = fromMaybe (FullView 0 0) thisView
       atomically $ writeTVar ref (d, newview, foc, curSz)
-      renderToGtk dw (compositeSelection sel d)
-
-compositeSelection ::
-  (Monoid m, Renderable (Path R2) b, Backend b R2)
-  => [DragEvent]
-  -> AnnDiagram b R2 m
-  -> AnnDiagram b R2 m
-compositeSelection drags d = drawSelection drags `atop` d
-
--- | overlay for selected regions
-drawSelection ::
-  (Monoid m, Renderable (Path R2) b, Backend b R2)
-  => [DragEvent]
-  -> AnnDiagram b R2 m
-drawSelection = foldr (\de d -> drawDrag de `atop` d) mempty
-
-drawDrag ::
-  (Monoid m, Renderable (Path R2) b, Backend b R2)
-  => DragEvent
-  -> AnnDiagram b R2 m
-drawDrag (DragE (ClickE _ _ sx sy) ex ey) = mempty <$>
-  stroke (rect (abs $ ex - sx) (abs $ ey - sy))
-   # alignBL
-   # translate aVec
-   # fcA (mediumpurple `withOpacity` 0.4)
- where
-  aVec = (min sx ex, min sy ey)
+      renderToGtk dw (drawMod  (mempty <$ d))

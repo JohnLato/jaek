@@ -1,4 +1,6 @@
-{-# LANGUAGE DeriveDataTypeable, ExistentialQuantification, RankNTypes #-}
+{-# LANGUAGE DeriveDataTypeable
+            ,ExistentialQuantification
+            ,RankNTypes #-}
 
 -- Define the Controller spec, as well as the basic null controller
 module Jaek.UI.Controllers.Base (
@@ -8,6 +10,7 @@ module Jaek.UI.Controllers.Base (
  -- ** ControlSet functions
  ,addController
  ,eFocChangeSet
+ ,diagChangeSet
  -- ** individual controller functions
  ,nullController
  ,defaultPred
@@ -25,9 +28,7 @@ import Jaek.UI.Views
 import Diagrams.Prelude
 import Diagrams.Backend.Cairo
 import Reactive.Banana
-import Data.Data
-
-import Data.Monoid (Monoid (..))
+import Data.Data()
 
 type Pred st e = st -> e -> Bool
 
@@ -42,7 +43,7 @@ data Controller st = Controller {
   ,motionsPred :: Pred st MotionEvent
   ,eFocChange  :: Event Focus
   ,eZipChange  :: Event (TreeZip -> TreeZip)
-  ,eDiagChange :: Event (Diagram Cairo R2 -> Diagram Cairo R2)
+  ,bDiagChange :: Behavior (Diagram Cairo R2 -> Diagram Cairo R2)
   ,eViewChange :: Event (ViewMap -> ViewMap)
   ,response    :: Event (IO ())
   }
@@ -56,7 +57,7 @@ extract :: (forall st. Controller st -> b) -> EControl -> b
 extract fn (EControl ctrl) = fn ctrl
 
 addController :: Controller st -> ControlSet -> ControlSet
-addController ctrl set = EControl ctrl : set
+addController ctrl cset = EControl ctrl : cset
 
 -- | A controller which doesn't do anything, and passes through all events.
 nullController :: Controller ()
@@ -69,7 +70,7 @@ nullController =
              defaultPred
              never
              never
-             never
+             (pure id)
              never
              never
 
@@ -101,9 +102,20 @@ filterControlSet
   -> Event KeyVal
   -> Event MotionEvent
   -> (Event ClickEvent, Event ClickEvent, Event KeyVal, Event MotionEvent)
-filterControlSet set clicks releases keys motions = foldr fn (clicks, releases, keys, motions) set
+filterControlSet cset clicks releases keys motions =
+  foldr fn (clicks, releases, keys, motions) cset
  where
   fn ectr (c, r, k, m) = extract (\ctrl -> filterController ctrl c r k m) ectr
 
 eFocChangeSet :: ControlSet -> Event Focus
-eFocChangeSet set = mconcat $ map (extract eFocChange) set
+eFocChangeSet = mconcat . map (extract eFocChange)
+
+-- | Get a behavior of all Diagram modifier functions from the
+-- ControlSet, with the first Controllers applied earliest.
+diagChangeSet :: ControlSet -> Behavior (Diagram Cairo R2 -> Diagram Cairo R2)
+diagChangeSet = foldr f (pure id)
+ where
+  f ectr endb = (.) <$> modf ectr <*> endb
+  modf ectr = (\isActive changeF -> if isActive then changeF else id)
+              <$> value (extract dActive ectr)
+              <*> extract bDiagChange ectr

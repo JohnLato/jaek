@@ -15,7 +15,7 @@ insertSegment :: (Num a, Ord a) => M.Map a Bool -> (a,a) -> M.Map a Bool
 insertSegment m (off,dur) = firstF . lastF $ M.union pre post
  where
   (pre,post') = M.split off m
-  (blk,post)  = M.split (off+dur) post'
+  (_bk,post)  = M.split (off+dur) post'
   lastPrior   = fmap fst $ M.maxViewWithKey pre
   firstNext   = fmap fst $ M.minViewWithKey post
   -- If lastPrior is True, already in a block, so don't need to set a new flag

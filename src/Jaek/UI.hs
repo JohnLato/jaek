@@ -16,8 +16,6 @@ import           Jaek.UI.Controllers
 import           Jaek.UI.Dialogs
 import           Jaek.UI.Focus
 import           Jaek.UI.FrpHandlersCustom
-import           Jaek.UI.Input.Actions
-import           Jaek.UI.Input.Drags
 import           Jaek.UI.MenuActionHandlers
 import           Jaek.UI.Render
 
@@ -68,7 +66,7 @@ createMainWindow iProject iTree = do
     eNewSource  <- importHandler standardGroup win
     eMainExpose <- exposeEvents mainArea
     -- only the window receives keypress events...
-    eKeypresses <- keypressEvents win
+    eKeys <- keypressEvents win
     clicks      <- clickEvents mainArea
     bSz         <- genDSize mainArea
     eRelease    <- releaseEvents mainArea
@@ -77,9 +75,9 @@ createMainWindow iProject iTree = do
         bFocus  = value dFocus
         eFocus  = changes dFocus
         bFiltInWave = const . isWave <$> bFocus
-        treeMods = keyActions bSz bView bSels $
-                     filterApply bFiltInWave eKeypresses
-        bSels  = dSelection bSz dFocus bZip clicks eRelease drags motions
+        treeMods = keyActions bSz bView selCtrl $
+                     filterApply bFiltInWave eKeys
+        selCtrl  = selectCtrl bSz dFocus bZip clicks eRelease drags motions
         bFName = stepper iProject (fst <$> (eNewDoc <> eOpenDoc))
         (bRoot, _bProjName) = (takeDirectory <$> bFName,
                                takeFileName  <$> bFName)
@@ -87,13 +85,15 @@ createMainWindow iProject iTree = do
                           treeMods eFocus
         bDraw  = genBDraw mpRef bRoot (value bZip) bFocus (value bSz) (value bView)
         dFocus = genDFocus bDraw clicks
-                           (eFocChangeSet ctrlSet)
+                           (eFocChangeSet ctrlSet2)
                            $ ((\tz tmf -> tmf tz) <$> value bZip) <@> treeMods
-        ctrlSet :: ControlSet
-        ctrlSet = addController (keynavActions bFocus bZip eKeypresses) []
+        -- need to keep several layers of control sets so that events can
+        -- be propagated through them.
+        ctrlSet1 = addController selCtrl []
+        ctrlSet2 = addController (keynavActions bFocus bZip eKeys) ctrlSet1
 
     reactimate $ (drawOnExpose mainArea drawRef <$> bDraw <*>
-                    value bView <*> bFocus <*> value bSels)
+                    value bView <*> bFocus <*> diagChangeSet ctrlSet2)
                  <@> eMainExpose
 
     -- redraw the window when the state is updated by dirtying the widget.
