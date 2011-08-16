@@ -103,7 +103,7 @@ createMainWindow iProject iTree = do
     reactimate $ apply ((\fp tz () -> writeProject fp tz) <$> bFName <*> bZip)
                        eSaveDoc
 
-  FRP.run network
+  FRP.actuate network
   ui <- uiManagerNew
   ignore $ uiManagerAddUiFromString ui uiDef
   uiManagerInsertActionGroup ui standardGroup 0
