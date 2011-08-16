@@ -29,6 +29,8 @@ import Jaek.UI.Views
 import Diagrams.Prelude
 import Diagrams.Backend.Cairo
 import Reactive.Banana
+import Data.Default
+
 import Data.Data()
 
 type Pred st e = st -> e -> Bool
@@ -61,10 +63,10 @@ addController :: Controller st -> ControlSet -> ControlSet
 addController ctrl cset = EControl ctrl : cset
 
 -- | A controller which doesn't do anything, and passes through all events.
-nullController :: Controller ()
+nullController :: Default a => Controller a
 nullController =
   Controller (pure False)
-             (pure ())
+             (pure def)
              defaultPred
              defaultPred
              defaultPred

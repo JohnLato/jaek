@@ -28,19 +28,12 @@ keyActions ::
   -- -> Event (TreeZip -> TreeZip)
   -> Controller ()
 keyActions bSz bVm selCtrl eKey =
-  Controller ((\sAct sel -> sAct && not (null sel))
-                <$> dActive selCtrl <*> dState selCtrl)
-                -- active with current selection
-             (pure ())
-             defaultPred
-             defaultPred
-             keyPred
-             defaultPred
-             never
-             zChng
-             (pure id)
-             never
-             never
+  nullController { dActive = ((\sAct sel -> sAct && not (null sel))
+                     <$> dActive selCtrl <*> dState selCtrl)
+                     -- active with current selection
+                  ,dState = pure ()
+                  ,keysPred = keyPred
+                  ,eZipChange = zChng }
  where
   zChng = filterMaybes $
             (keyactOnSelect <$> bSz <*> bVm <*> dState selCtrl) <@> eKey

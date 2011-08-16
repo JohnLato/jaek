@@ -18,20 +18,12 @@ keynavActions ::
   -> Event KeyVal
   -> Controller ()
 keynavActions bFoc bZip eKey =
-  Controller (pure True)
-             (pure ())
-             defaultPred
-             defaultPred
-             keyPred
-             defaultPred
-             eFocChange
-             never
-             (pure id)
-             never
-             never
+  nullController { dActive = pure True
+                  ,keysPred = keyPred
+                  ,eFocChange = focChange }
  where
   keyPred _ kv = maybe True (const False) $ keynav undefined undefined kv
-  eFocChange = filterMaybes $ (keynav <$> bFoc <*> value bZip) <@> eKey
+  focChange = filterMaybes $ (keynav <$> bFoc <*> value bZip) <@> eKey
 
 keynav :: Focus -> TreeZip -> KeyVal -> Maybe Focus
 keynav _foc _tz keyval

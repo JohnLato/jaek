@@ -39,17 +39,9 @@ selectCtrl
   -> Event ([EventModifier], Double, Double)
   -> Controller [DragEvent]
 selectCtrl bSize bFocus bZip clicks releases drags motions =
-  Controller (isWave <$> bFocus)
-             dSel
-             defaultPred
-             defaultPred
-             defaultPred
-             defaultPred
-             never
-             never
-             (compositeSelection <$> value dSel)
-             never
-             never
+  nullController { dActive = isWave <$> bFocus
+                  ,dState  = dSel
+                  ,bDiagChange = compositeSelection <$> value dSel }
  where
   dSel = (\xs mx -> maybe xs (:xs) mx) <$> bS1 <*> bS2
   ff sel clk = not (any (\drg ->
