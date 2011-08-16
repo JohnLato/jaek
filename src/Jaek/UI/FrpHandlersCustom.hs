@@ -4,7 +4,7 @@ module Jaek.UI.FrpHandlersCustom (
   Focus
  ,genBZip
  ,genBDraw
- ,genBFocus
+ ,genDFocus
 )
 
 where
@@ -35,11 +35,11 @@ genBZip ::
   -> Event (String, [StreamExpr])
   -> Event (TreeZip -> TreeZip)
   -> Event Focus
-  -> (Behavior TreeZip, Behavior ViewMap)
+  -> (Discrete TreeZip, Discrete ViewMap)
 genBZip iTree eNewDoc eNewSource eTreeMod eFocChange =
   (fst <$> bPair, snd <$> bPair)
  where
-  bPair = accumB (zipper iTree, mapFromTree iTree) $
+  bPair = accumD (zipper iTree, mapFromTree iTree) $
               ((\(_rt,ht) (_z,mp) ->
                   let z' = zipper ht
                   in (z', updateMap z' NewDoc mp)) <$> eNewDoc)
@@ -55,12 +55,12 @@ genBZip iTree eNewDoc eNewSource eTreeMod eFocChange =
 --  the @Event Focus@ are emitted when the focus changes, and can be used to
 --  trigger screen refreshes
 --  it's important to only trigger focus events when the focus actually changes
-genBFocus :: Behavior (AnnDiagram Cairo R2 (First TreePath))
+genDFocus :: Behavior (AnnDiagram Cairo R2 (First TreePath))
   -> Event ClickEvent
   -> Event Focus
   -> Event TreeZip
   -> Discrete Focus
-genBFocus bDraw clicks eFocChange eTreeChange = dfoc
+genDFocus bDraw clicks eFocChange eTreeChange = dfoc
  where
   dfoc   = stepperD Nothing eFilt
   beh    = value dfoc

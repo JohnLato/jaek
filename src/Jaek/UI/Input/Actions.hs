@@ -22,13 +22,13 @@ import Data.Ord
 
 keynavActions ::
   Behavior Focus
-  -> Behavior TreeZip
+  -> Discrete TreeZip
   -> Event KeyVal
   -> Controller ()
 keynavActions bFoc bZip eKey = Controller (pure True) (pure ()) defaultPred defaultPred keyPred defaultPred eFocChange never never never never
  where
   keyPred _ kv = maybe True (const False) $ keynav undefined undefined kv
-  eFocChange = filterMaybes $ (keynav <$> bFoc <*> bZip) <@> eKey
+  eFocChange = filterMaybes $ (keynav <$> bFoc <*> value bZip) <@> eKey
 
 keynav :: Focus -> TreeZip -> KeyVal -> Maybe Focus
 keynav _foc _tz keyval
@@ -36,13 +36,13 @@ keynav _foc _tz keyval
   | otherwise       = Nothing
 
 keyActions :: 
-  Behavior (Int,Int)
-  -> Behavior ViewMap
-  -> Behavior [DragEvent]
+  Discrete (Int,Int)
+  -> Discrete ViewMap
+  -> Discrete [DragEvent]
   -> Event KeyVal
   -> Event (TreeZip -> TreeZip)
 keyActions bSz bVm bSels eKey =
-  filterMaybes $ apply (keyactOnSelect <$> bSz <*> bVm <*> bSels) eKey
+  filterMaybes $ (keyactOnSelect <$> bSz <*> bVm <*> bSels) <@> eKey
 
 keyactOnSelect ::
   (Int,Int)

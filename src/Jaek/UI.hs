@@ -70,7 +70,7 @@ createMainWindow iProject iTree = do
     -- only the window receives keypress events...
     eKeypresses <- keypressEvents win
     clicks      <- clickEvents mainArea
-    bSz         <- genBSize mainArea
+    bSz         <- genDSize mainArea
     eRelease    <- releaseEvents mainArea
     motions     <- motionEvents mainArea
     let (drags, _ndReleases) = dragEvents (clicks <> eRelease)
@@ -79,22 +79,22 @@ createMainWindow iProject iTree = do
         bFiltInWave = const . isWave <$> bFocus
         treeMods = keyActions bSz bView bSels $
                      filterApply bFiltInWave eKeypresses
-        bSels  = bSelection bSz bFocus bZip clicks eRelease drags motions
+        bSels  = dSelection bSz dFocus bZip clicks eRelease drags motions
         bFName = stepper iProject (fst <$> (eNewDoc <> eOpenDoc))
         (bRoot, _bProjName) = (takeDirectory <$> bFName,
                                takeFileName  <$> bFName)
         (bZip, bView) = genBZip iTree (eNewDoc <> eOpenDoc) eNewSource
                           treeMods eFocus
-        bDraw  = genBDraw mpRef bRoot bZip bFocus bSz bView
-        dFocus = genBFocus bDraw clicks
+        bDraw  = genBDraw mpRef bRoot (value bZip) bFocus (value bSz) (value bView)
+        dFocus = genDFocus bDraw clicks
                            (eFocChangeSet ctrlSet)
-                           $ apply ((\tz tmf -> tmf tz) <$> bZip) treeMods
+                           $ ((\tz tmf -> tmf tz) <$> value bZip) <@> treeMods
         ctrlSet :: ControlSet
         ctrlSet = addController (keynavActions bFocus bZip eKeypresses) []
 
-    reactimate $ apply (drawOnExpose mainArea drawRef <$> bDraw
-                          <*> bView <*> bFocus <*> bSels)
-                       eMainExpose
+    reactimate $ (drawOnExpose mainArea drawRef <$> bDraw <*>
+                    value bView <*> bFocus <*> value bSels)
+                 <@> eMainExpose
 
     -- redraw the window when the state is updated by dirtying the widget.
     let redrawF = widgetQueueDraw mainArea
@@ -105,7 +105,7 @@ createMainWindow iProject iTree = do
               <> ( redrawF <$ motions)
 
     -- save the document when requested
-    reactimate $ apply ((\fp tz () -> writeProject fp tz) <$> bFName <*> bZip)
+    reactimate $ apply ((\fp tz () -> writeProject fp tz) <$> bFName <*> value bZip)
                        eSaveDoc
 
   FRP.actuate network

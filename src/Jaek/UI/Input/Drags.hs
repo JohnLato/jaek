@@ -1,7 +1,7 @@
 {-# LANGUAGE TupleSections #-}
 
 module Jaek.UI.Input.Drags (
-  bSelection
+  dSelection
  ,dragToRegions
 )
 
@@ -19,22 +19,22 @@ import Data.Label as L
 
 import Control.Arrow
 
--- The current selection is a Behavior [DragEvent].  There are two components,
+-- The current selection is a Discrete [DragEvent].  There are two components,
 -- the current drag event, and any prior selected regions (if the current event
 -- is additive).  The selections are cleared by a non-additive click
 -- event outside a selected area.
 -- 
 -- when a click occurs within the current selection, it should be ignored.
-bSelection ::
-  Behavior (Int,Int)
-  -> Behavior Focus
-  -> Behavior TreeZip
+dSelection
+  :: Discrete (Int,Int)
+  -> Discrete Focus
+  -> Discrete TreeZip
   -> Event ClickEvent    -- ^ clicks
   -> Event ClickEvent    -- ^ releases
   -> Event DragEvent
   -> Event ([EventModifier], Double, Double)
-  -> Behavior [DragEvent]
-bSelection bSize bFocus bZip clicks releases drags motions =
+  -> Discrete [DragEvent]
+dSelection bSize bFocus bZip clicks releases drags motions =
   (\xs mx -> maybe xs (:xs) mx) <$> bS1 <*> bS2
  where
   ff sel clk = not (any (\drg ->
@@ -45,14 +45,14 @@ bSelection bSize bFocus bZip clicks releases drags motions =
   bS1 = (\w f z s -> map (channelizeDrag w f z) s) <$> bSize
           <*> bFocus <*> bZip
           <*> bCurSelection (filterApply bMask drags)
-                            (() <$ filterApply ff' clicks)
+                            (() <$ filterApply (value ff') clicks)
   bS2 = (\w f z s -> fmap (channelizeDrag w f z) s)  <$> bSize
           <*> bFocus <*> bZip
-          <*> genBDrag filtCurClk (filterApply bMask motions)
+          <*> genDDrag filtCurClk (filterApply bMask motions)
   -- for genBDrag's input, if we filter a click, we also want to filter the 
   -- release.  Annotate each click with a bool, true iff we keep the click,
   -- otherwise false
-  annClicks = FRP.apply ((\sel clk -> (ff sel clk, clk)) <$> bS1) clicks
+  annClicks = ((\sel clk -> (ff sel clk, clk)) <$> bS1) <@> clicks
   bMask :: Behavior (u -> Bool)
   bMask = stepper (const False) (const . fst <$> annClicks)
   filtCurClk = mapFilterE snd fst annClicks <> filterApply bMask releases
@@ -104,9 +104,9 @@ dragToRegions (xSz, ySz) zp vm drg =
   x2sc x = off + floor (fI dur * (x / fI xSz))
   chnBorder y = round $ fI nc * (y / fI ySz) :: Int
 
-bCurSelection :: Event DragEvent -> Event () -> Behavior [DragEvent]
+bCurSelection :: Event DragEvent -> Event () -> Discrete [DragEvent]
 bCurSelection eDrags eClear =
-  accumB [] $ (dragAcc <$> eDrags) <> (clearAcc <$> eClear)
+  accumD [] $ (dragAcc <$> eDrags) <> (clearAcc <$> eClear)
  where
   dragAcc drag acc
     | dragIsAdditive drag = drag:acc

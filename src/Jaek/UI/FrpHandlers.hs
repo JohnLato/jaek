@@ -17,8 +17,8 @@ module Jaek.UI.FrpHandlers (
  ,releaseEvents
  ,motionEvents
  ,dragEvents
- ,genBSize
- ,genBDrag
+ ,genDSize
+ ,genDDrag
  ,module F
 )
 
@@ -139,11 +139,11 @@ dragEvents es =
 -- | generate a behavior of the current drag event.  This should work
 -- for any EventMask, even if PointerMotionMask is on, because it filters
 -- all events when a mouse button isn't pressed.
-genBDrag ::
+genDDrag ::
   Event ClickEvent
   -> Event ([EventModifier], Double, Double) 
-  -> Behavior (Maybe DragEvent)
-genBDrag clicks motions = accumB Nothing $ (cf' <$> clicks) <> (mf <$> filtms)
+  -> Discrete (Maybe DragEvent)
+genDDrag clicks motions = accumD Nothing $ (cf' <$> clicks) <> (mf <$> filtms)
  where
   cf (ClickE ReleaseC _ _ _) = False
   cf _                     = True
@@ -158,11 +158,11 @@ genBDrag clicks motions = accumB Nothing $ (cf' <$> clicks) <> (mf <$> filtms)
 -- | Create a behavior of the size of a widget.
 -- 
 -- In @NetworkDescription@ because this is uses an internal @Event@.
-genBSize :: WidgetClass w => w -> NetworkDescription (Behavior (Int, Int))
-genBSize widget = do
+genDSize :: WidgetClass w => w -> NetworkDescription (Discrete (Int, Int))
+genDSize widget = do
    eSize <- e
    sz <- liftIO $ widgetGetSize widget
-   return $ stepper sz eSize
+   return $ stepperD sz eSize
  where
    e = event1 $ \k -> ignore $ on widget sizeAllocate $
      \(Rectangle _ _ width height) -> k (width,height)
