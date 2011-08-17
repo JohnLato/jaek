@@ -89,7 +89,7 @@ createMainWindow iProject iTree = do
         -- be propagated through them.
         ctrlSet1 = addController selCtrl []
         edCtrl1  = keyActions bSz bView selCtrl $ filterApply bFiltInWave eKeys
-        ctrlSet2 = addController (keynavActions bFocus bZip eKeys) $
+        ctrlSet2 = addController (waveNav bFocus bZip eKeys) $
                    addController edCtrl1 ctrlSet1
         treeMods = zipChangeSet ctrlSet2
 

@@ -1,5 +1,5 @@
 module Jaek.UI.Controllers.Nav (
- keynavActions
+ waveNav
 )
 
 where
@@ -12,12 +12,13 @@ import Jaek.UI.Controllers.Base
 
 import Reactive.Banana
 
-keynavActions ::
+-- | navigation valid from within a Wave view
+waveNav ::
   Behavior Focus
   -> Discrete TreeZip
   -> Event KeyVal
   -> Controller ()
-keynavActions bFoc bZip eKey =
+waveNav bFoc bZip eKey =
   nullController { dActive = pure True
                   ,keysPred = keyPred
                   ,eFocChange = focChange }
