@@ -1,14 +1,19 @@
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TypeOperators, TypeSynonymInstances #-}
 
 -- | general GTK FRP functions.  These may be split into a separate
 -- module in the future...
 
 module Jaek.UI.FrpHandlers (
-  xyClick
+  -- * Types and Classes
+  HasXY (..)
+  -- * Lenses
+ ,xyClick
  ,xyStart
  ,xyEnd
+ ,xyMotion
  ,dragXs
  ,dragYs
+  -- * Other stuff
  ,mapFilterE
  ,filterMaybes
  ,exposeEvents
@@ -44,6 +49,9 @@ xyClick = Lens $ (,) <$> fst `for` xPos <*> snd `for` yPos
 xyStart :: DragEvent :-> (Double,Double)
 xyStart = xyClick . dragStart
 
+xyMotion :: MotionEvent :-> (Double, Double)
+xyMotion = lens (\(_,x,y) -> (x,y)) (\(x,y) (t,_,_) -> (t,x,y))
+
 xyEnd :: DragEvent :-> (Double, Double)
 xyEnd = Lens $ (,) <$> fst `for` xDragEnd <*> snd `for` yDragEnd
 
@@ -54,6 +62,23 @@ dragXs = Lens $ (,) <$> fst `for` (xPos . dragStart) <*> snd `for` xDragEnd
 -- start and end refer to the start and end clicks.
 dragYs :: DragEvent :-> (Double, Double)
 dragYs = Lens $ (,) <$> fst `for` (yPos . dragStart) <*> snd `for` yDragEnd
+
+-- ----------------------------------------
+-- A few classes for working with clicks and drags
+
+-- | Things with an (x,y) coordinate.
+class HasXY e where
+  getXY :: e :-> (Double,Double)
+
+instance HasXY ClickEvent where
+  getXY = xyClick
+
+-- | For DragEvent, return the starting (x,y) coordinates
+instance HasXY DragEvent where
+  getXY = xyStart
+
+instance HasXY MotionEvent where
+  getXY = xyMotion
 
 releaseFromDrag :: DragEvent -> ClickEvent
 releaseFromDrag (DragE strt x y) = ClickE ReleaseC (L.get clickMods strt) x y

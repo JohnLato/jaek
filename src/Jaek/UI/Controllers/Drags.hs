@@ -18,8 +18,10 @@ import Jaek.UI.Views
 import Reactive.Banana  as FRP
 import Diagrams.Prelude as D
 import Data.Label as L
+import qualified Data.Tuple.Update as T
 
 import Control.Arrow
+import Control.Monad.Identity
 
 -- The current selection is a Discrete [DragEvent].  There are two components,
 -- the current drag event, and any prior selected regions (if the current event
@@ -36,33 +38,43 @@ selectCtrl
   -> Event ClickEvent    -- ^ clicks
   -> Event ClickEvent    -- ^ releases
   -> Event DragEvent
-  -> Event ([EventModifier], Double, Double)
+  -> Event MotionEvent
   -> Controller [DragEvent]
 selectCtrl bSize bFocus bZip clicks releases drags motions =
-  nullController { dActive = isWave <$> bFocus
+  nullController { dActive = isActive
                   ,dState  = dSel
                   ,bDiagChange = compositeSelection <$> value dSel }
  where
-  dSel = (\xs mx -> maybe xs (:xs) mx) <$> bS1 <*> bS2
-  ff sel clk = not (any (\drg ->
-     contains' (fromCorners (P $ L.get xyStart drg)
-                            (P $ L.get xyEnd drg))
-       $ P $ L.get xyClick clk) sel)
-  ff' = (\sel clk -> not (clickIsAdditive clk) && ff sel clk) <$> bS1
-  bS1 = (\w f z s -> map (channelizeDrag w f z) s) <$> bSize
-          <*> bFocus <*> bZip
-          <*> bCurSelection (filterApply bMask drags)
-                            (() <$ filterApply (value ff') clicks)
-  bS2 = (\w f z s -> fmap (channelizeDrag w f z) s)  <$> bSize
-          <*> bFocus <*> bZip
-          <*> genDDrag filtCurClk (filterApply bMask motions)
-  -- for genBDrag's input, if we filter a click, we also want to filter the 
-  -- release.  Annotate each click with a bool, true iff we keep the click,
-  -- otherwise false
-  annClicks = ((\sel clk -> (ff sel clk, clk)) <$> bS1) <@> clicks
-  bMask :: Behavior (u -> Bool)
-  bMask = stepper (const False) (const . fst <$> annClicks)
-  filtCurClk = mapFilterE snd fst annClicks <> filterApply bMask releases
+  isActive     = isWave <$> bFocus
+  filterActive = filterApply (const <$> value isActive)
+  filtOnPos :: HasXY a => Event a -> Event a
+  filtOnPos    = filterApply
+                   ((\sels drag ->
+                        not (any (\drg -> contains'
+                          (fromCorners (P $ L.get xyStart drg)
+                                       (P $ L.get xyEnd drg))
+                          $ P $ L.get getXY drag) sels) )
+                    <$> value dSel)
+  dSel         = combiner <$> accumD (Nothing, []) (eDrags <> eCurDrag)
+  -- the current selection is made of two components:
+  -- 1.  The current drag region, if it's additive (e.g. shift-drag)
+  -- 2.  Everything which is already selected
+  combiner (Nothing, rest)   = rest
+  combiner (Just this, rest)
+    | dragIsAdditive this    = this:rest
+    | otherwise              = [this]
+  -- need to create Event ((Maybe DE, [DE]) -> (Maybe DE, [DE]) )
+  curDrag  = genDDrag (filtOnPos . filterActive $ clicks <> releases)
+                      (filterActive $ motions)
+  eCurDrag = T.upd1 <$> (dChannelize <@> changes curDrag)
+  eDrags   = (\(Identity drag) ->
+                  if dragIsAdditive drag
+                    then second (drag: )
+                    else second (const [drag]))
+             <$> (dChannelize <@> (Identity <$> filtOnPos (filterActive drags)))
+  dChannelize :: (Functor f) => Discrete (f DragEvent -> f DragEvent)
+  dChannelize = (\w f z s -> fmap (channelizeDrag w f z) s)
+                  <$> bSize <*> bFocus <*> bZip
 
 -- | check if a drag event should be added to current selection (shift-drag)
 -- or replace it.
@@ -109,12 +121,3 @@ dragToRegions (xSz, ySz) zp vm drg =
   (xStart,xEnd) = (x2sc . uncurry min &&& x2sc . uncurry max) $ L.get dragXs drg
   x2sc x = off + floor (fI dur * (x / fI xSz))
   chnBorder y = round $ fI nc * (y / fI ySz) :: Int
-
-bCurSelection :: Event DragEvent -> Event () -> Discrete [DragEvent]
-bCurSelection eDrags eClear =
-  accumD [] $ (dragAcc <$> eDrags) <> (clearAcc <$> eClear)
- where
-  dragAcc drag acc
-    | dragIsAdditive drag = drag:acc
-    | otherwise           = [drag]
-  clearAcc () _           = []
