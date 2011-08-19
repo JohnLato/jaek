@@ -39,11 +39,14 @@ selectCtrl
   -> Event ClickEvent    -- ^ releases
   -> Event DragEvent
   -> Event MotionEvent
+  -> Event KeyVal
   -> Controller [DragEvent]
-selectCtrl bSize bFocus bZip clicks releases drags motions =
-  nullController { dActive = isActive
-                  ,dState  = dSel
-                  ,bDiagChange = compositeSelection <$> value dSel }
+selectCtrl bSize bFocus bZip clicks releases drags motions keys =
+  nullController { dActive     = isActive
+                  ,dState      = dSel
+                  ,keysPred    = keypred
+                  ,bDiagChange = compositeSelection <$> value dSel
+                  ,refreshTrig = () <$ changes dSel }
  where
   isActive     = isWave <$> bFocus
   filterActive = filterApply (const <$> value isActive)
@@ -55,7 +58,8 @@ selectCtrl bSize bFocus bZip clicks releases drags motions =
                                        (P $ L.get xyEnd drg))
                           $ P $ L.get getXY drag) sels) )
                     <$> value dSel)
-  dSel         = combiner <$> accumD (Nothing, []) (eDrags <> eCurDrag)
+  dSel         = combiner
+                 <$> accumD (Nothing, []) (eDrags <> eCurDrag <> breaks)
   -- the current selection is made of two components:
   -- 1.  The current drag region, if it's additive (e.g. shift-drag)
   -- 2.  Everything which is already selected
@@ -75,6 +79,13 @@ selectCtrl bSize bFocus bZip clicks releases drags motions =
   dChannelize :: (Functor f) => Discrete (f DragEvent -> f DragEvent)
   dChannelize = (\w f z s -> fmap (channelizeDrag w f z) s)
                   <$> bSize <*> bFocus <*> bZip
+  breaks = filterMaybes (breakKeyF <$> keys)
+  keypred [] keyval = False
+  keypred _  keyval = maybe False (const True) $ breakKeyF keyval
+  -- breakKeyF :: KeyVal -> Maybe ((Maybe DE, [DE]) ->  (Maybe DE, [DE]))
+  breakKeyF keyval
+    | keyval == 65307 = Just (const (Nothing, []))
+    | otherwise       = Nothing
 
 -- | check if a drag event should be added to current selection (shift-drag)
 -- or replace it.

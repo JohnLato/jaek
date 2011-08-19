@@ -25,6 +25,7 @@ module Jaek.UI.FrpHandlers (
  ,genDSize
  ,genDDrag
  ,module F
+ ,KeyVal       -- from Graphics.UI.Gtk
 )
 
 where

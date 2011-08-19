@@ -21,6 +21,7 @@ import           Jaek.UI.Render
 
 import           Reactive.Banana as FRP
 import           Diagrams.Prelude hiding (apply)
+import           Data.Tuple.Select
 
 import           System.FilePath
 
@@ -66,7 +67,7 @@ createMainWindow iProject iTree = do
     eNewSource  <- importHandler standardGroup win
     eMainExpose <- exposeEvents mainArea
     -- only the window receives keypress events...
-    eKeys <- keypressEvents win
+    eKeys       <- keypressEvents win
     clicks      <- clickEvents mainArea
     bSz         <- genDSize mainArea
     eRelease    <- releaseEvents mainArea
@@ -75,7 +76,8 @@ createMainWindow iProject iTree = do
         bFocus  = value dFocus
         eFocus  = changes dFocus
         bFiltInWave = const . isWave <$> bFocus
-        selCtrl  = selectCtrl bSz dFocus bZip clicks eRelease drags motions
+        selCtrl  = selectCtrl bSz dFocus bZip clicks
+                              eRelease drags motions eKeys
         bFName = stepper iProject (fst <$> (eNewDoc <> eOpenDoc))
         (bRoot, _bProjName) = (takeDirectory <$> bFName,
                                takeFileName  <$> bFName)
@@ -89,7 +91,8 @@ createMainWindow iProject iTree = do
         -- be propagated through them.
         ctrlSet1 = addController selCtrl []
         edCtrl1  = keyActions bSz bView selCtrl $ filterApply bFiltInWave eKeys
-        ctrlSet2 = addController (waveNav bFocus bZip eKeys) $
+        filtKeys = sel3 $ filterController edCtrl1 clicks eRelease eKeys motions
+        ctrlSet2 = addController (waveNav bFocus bZip filtKeys) $
                    addController edCtrl1 ctrlSet1
         treeMods = zipChangeSet ctrlSet2
 
