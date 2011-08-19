@@ -38,10 +38,16 @@ drawAt
   -> (Int,Int)
   -> ViewMap
   -> AnnDiagram Cairo R2 (First TreePath)
-drawAt _mpRef _root zp Nothing    (x,_) _ =
-  toGtkCoords . scale (0.25* fI x) . drawTree $ fromZipper zp
-drawAt _mpRef _root zp (Just [])  (x,_) _ =
-  toGtkCoords . scale (0.25* fI x) . drawTree $ fromZipper zp
+drawAt  mpRef  root zp Nothing    win   vmap =
+  drawAt mpRef root zp (Just []) win vmap
+drawAt _mpRef _root zp (Just [])  (x,_) vmap =
+  let tree    = fromZipper zp
+      (FullView xScale yScale xOff yOff) = getView vmap tree
+  in toGtkCoords
+       . scaleY (180 * yScale)
+       . scaleX (180 * xScale)
+       . translate ((0,xOff) ^+^ (yOff,0))
+       $ drawTree tree
 drawAt mpRef root zp (Just ref) (x,y) vmap =
   maybe (toGtkCoords . scale (0.25* fI x) . drawTree $ fromZipper zp)
         (\(z', v) -> let d = alignB
