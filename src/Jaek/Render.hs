@@ -11,12 +11,14 @@ import           Jaek.Render.Tree
 import           Jaek.Tree
 import           Jaek.UI.Views
 
+import           Diagrams.Backend.Cairo
 import           Diagrams.Backend.Cairo.Gtk
 import           Diagrams.Prelude hiding (apply)
 
 import qualified Data.HashMap.Strict as M
 
 import           Control.Parallel.Strategies
+import           Control.Concurrent.STM
 
 import           System.IO.Unsafe (unsafePerformIO)
 
@@ -28,6 +30,14 @@ getDur :: View -> SampleCount
 getDur (WaveView _ dur) = dur
 getDur _                = 44100    -- default duration, can do better
 
+drawAt
+  :: TVar PathMap
+  -> FilePath
+  -> TreeZip
+  -> Maybe [Int]
+  -> (Int,Int)
+  -> ViewMap
+  -> AnnDiagram Cairo R2 (First TreePath)
 drawAt _mpRef _root zp Nothing    (x,_) _ =
   toGtkCoords . scale (0.25* fI x) . drawTree $ fromZipper zp
 drawAt _mpRef _root zp (Just [])  (x,_) _ =
