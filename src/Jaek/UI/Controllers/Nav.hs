@@ -21,7 +21,7 @@ waveNav ::
   -> Event KeyVal
   -> Event MotionEvent
   -> Controller ()
-waveNav bFoc bZip clicks releases keys motions =
+waveNav dFoc dZip clicks releases keys motions =
   nullController { dActive     = isActive
                   ,dState      = pure ()
                   ,clickPass   = clicks
@@ -31,7 +31,7 @@ waveNav bFoc bZip clicks releases keys motions =
                   ,eFocChange = focChange }
  where
   isActive = pure True
-  (passkeys, focChange) = splitEithers $ (keynav <$> bFoc <*> bZip)
+  (passkeys, focChange) = splitEithers $ (keynav <$> dFoc <*> dZip)
                                          <@> keys
 
 keynav :: Focus -> TreeZip -> KeyVal -> Either KeyVal Focus
