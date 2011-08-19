@@ -76,13 +76,13 @@ addWaveNode tz mp = M.insert (liftT nodePath cur) (WaveView 0 srcdur) mp
   srcdur = foldl' max 0 . map getDur $ getExprs cur
 
 changeWaveNode :: TreeZip -> View -> ViewMap -> ViewMap
-changeWaveNode tz v mp = M.adjust (const v) (liftT nodePath $ hole tz) mp
+changeWaveNode tz v = M.adjust (const v) (liftT nodePath $ hole tz)
 
 slideX :: Double -> View -> View
 slideX dist (FullView xs ys xOff yOff) = FullView xs ys (xOff+dist) yOff
 slideX dist (WaveView off dur) = WaveView nOff dur
  where
-   nOff = off + (round $ dist * fI dur)
+   nOff = off + round (dist * fI dur)
 
 slideY :: Double -> View -> View
 slideY dist (FullView xs ys xOff yOff) = FullView xs ys xOff (yOff+dist)

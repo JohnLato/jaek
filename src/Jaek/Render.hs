@@ -47,11 +47,11 @@ drawAt _mpRef _root zp (Just []) (_x,_y) vmap =
       -- the backend 'toGtkCoords' function auto-recenters, it's not possible
       -- at the moment.  I should fix that for diagrams-0.4
       xMod d = if xOff >= 0
-                 then d ||| (strutX xOff)
+                 then d ||| strutX xOff
                  else strutX (abs xOff) ||| d
       yMod d = if yOff >= 0
                  then strutY yOff === d
-                 else d === (strutY (abs yOff))
+                 else d === strutY (abs yOff)
   in toGtkCoords
        . scaleY (180 * yScale)
        . scaleX (180 * xScale)

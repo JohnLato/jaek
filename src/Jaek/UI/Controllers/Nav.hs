@@ -69,8 +69,8 @@ allNav dFocus dZip dVmap clicks releases keys motions =
 treeKey :: View -> TreeZip -> KeyVal -> Either KeyVal (ViewMap -> ViewMap)
 treeKey v@(FullView {}) tz keyval = case keyval of
   65361 -> Right (uf $ slideX (-0.40) v)  -- left
-  65362 -> Right (uf $ slideY (0.40) v)  -- up
-  65363 -> Right (uf $ slideX (0.40) v)  -- right
+  65362 -> Right (uf $ slideY 0.40    v)  -- up
+  65363 -> Right (uf $ slideX 0.40    v)  -- right
   65364 -> Right (uf $ slideY (-0.40) v)  -- down
   _     -> Left keyval
  where
@@ -78,7 +78,7 @@ treeKey v@(FullView {}) tz keyval = case keyval of
   uf = updateMap (goToHead tz) . ModView
 treeKey v@(WaveView {}) tz keyval = case keyval of
   65361 -> Right (uf $ slideX (-0.25) v)  -- left
-  65363 -> Right (uf $ slideX (0.25) v)   -- right
+  65363 -> Right (uf $ slideX 0.25    v)   -- right
   _     -> Left keyval
  where
   -- always set zipper to the root node path, just for updating the map

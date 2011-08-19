@@ -73,7 +73,7 @@ selectCtrl bSize bFocus bZip drags clicks releases keys motions =
     | otherwise              = [this]
   -- need to create Event ((Maybe DE, [DE]) -> (Maybe DE, [DE]) )
   curDrag  = genDDrag (filtOnPos . filterActive $ clicks <> releases)
-                      (filterActive $ motions)
+                      (filterActive motions)
   eCurDrag = T.upd1 <$> (dChannelize <@> changes curDrag)
   eDrags   = (\(Identity drag) ->
                   if dragIsAdditive drag
