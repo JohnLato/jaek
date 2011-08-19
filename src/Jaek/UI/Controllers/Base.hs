@@ -46,7 +46,6 @@ import           Jaek.UI.Views
 import           Diagrams.Prelude
 import           Diagrams.Backend.Cairo
 import           Reactive.Banana
-import           Data.Default
 
 import           Data.Data()
 import qualified Control.Monad.State as St

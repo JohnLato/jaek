@@ -40,7 +40,7 @@ drawAt
   -> AnnDiagram Cairo R2 (First TreePath)
 drawAt  mpRef  root zp Nothing    win   vmap =
   drawAt mpRef root zp (Just []) win vmap
-drawAt _mpRef _root zp (Just [])  (x,_) vmap =
+drawAt _mpRef _root zp (Just []) (_x,_y) vmap =
   let tree    = fromZipper zp
       (FullView xScale yScale xOff yOff) = getView vmap tree
   in toGtkCoords

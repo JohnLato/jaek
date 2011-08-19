@@ -100,6 +100,10 @@ compile (Region expr off dur) i = compile expr
 compile (StreamSeq exprs) i = foldr ((>=>) . compile) enumEof exprs i
 compile (Mix s1 s2) i       = mergeEnums (compile s1) (compile s2) mixEtee i
 
+myRun
+  :: (Functor f, Monad f, Monad m)
+  => Iteratee s1 f (Iteratee s m a)
+  -> f (Iteratee s m a)
 myRun i = either throwErr id <$> tryRun i
 
 mixEtee :: (Functor m, Monad m) => Enumeratee Vec Vec (Iteratee Vec m) a
