@@ -33,7 +33,7 @@ data ViewChange =
 
 -- | Information about what's currently in view...
 data View =
-    FullView !Double !Double           -- ^ xScale, yScale
+    FullView !Double !Double !Double !Double   -- ^ xScale, yScale, xOff, yOff
   | WaveView !SampleCount !SampleCount -- ^ streamOff, streamDur
   deriving (Eq, Show)
 
@@ -54,14 +54,14 @@ getView :: ViewMap -> HTree -> View
 getView m (Node node _) = fromMaybe def $ M.lookup (nodePath node) m
  where
   def
-   | node == Root = FullView 1 1
+   | node == Root = FullView 1 1 0 0
    | otherwise    = WaveView 0 $ foldl' max 0 . map getDur $ getExprs' node
 
 -- | Create a new map with a default view for everything in the tree.
 mapFromTree :: HTree -> ViewMap
 mapFromTree = M.fromList . map uf . flatten
  where
-  uf Root = ([], FullView 1 1)
+  uf Root = ([], FullView 1 1 0 0)
   uf node = (nodePath node,
              WaveView 0 $ foldl' max 0 . map getDur $ getExprs' node)
 

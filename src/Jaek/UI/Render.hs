@@ -26,7 +26,7 @@ type DrawRef m = TVar (AnnDiagram Cairo R2 m, View, Focus, (Int,Int))
 initDrawRef :: Monoid m => DrawingArea -> IO (DrawRef m)
 initDrawRef da = do
   sz <- widgetGetSize da
-  newTVarIO (mempty, FullView 0 0, Nothing, sz)
+  newTVarIO (mempty, FullView 0 0 0 0, Nothing, sz)
 
 drawOnExpose ::
   Monoid m
@@ -49,6 +49,6 @@ drawOnExpose da ref d view foc drawMod () = do
   if foc == lastFoc && chk && thisView == Just lastView && curSz == lastSz
     then renderToGtk dw (drawMod (mempty <$ lastD))
     else do
-      let newview = fromMaybe (FullView 0 0) thisView
+      let newview = fromMaybe (FullView 0 0 0 0) thisView
       atomically $ writeTVar ref (d, newview, foc, curSz)
       renderToGtk dw (drawMod  (mempty <$ d))
