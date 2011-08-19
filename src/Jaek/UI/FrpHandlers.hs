@@ -16,6 +16,7 @@ module Jaek.UI.FrpHandlers (
   -- * Other stuff
  ,mapFilterE
  ,filterMaybes
+ ,splitEithers
  ,exposeEvents
  ,keypressEvents
  ,clickEvents
@@ -102,6 +103,18 @@ mapFilterE f p e = f <$> filterE p e
 
 filterMaybes :: Event (Maybe a) -> Event a
 filterMaybes e = fromJust <$> filterE isJust e
+
+splitEithers :: Event (Either l r) -> (Event l, Event r)
+splitEithers e = ((\(Left x) -> x) <$> filterE isLeft e
+                 ,(\(Right x) -> x) <$> filterE isRight e)
+
+isRight :: Either l r -> Bool
+isRight (Right _) = True
+isRight _        = False
+
+isLeft :: Either l r -> Bool
+isLeft (Left _) = True
+isLeft _        = False
 
 event1 :: Typeable a => ((a -> IO ()) -> IO ()) -> NetworkDescription (Event a)
 event1 k = do

@@ -35,29 +35,33 @@ selectCtrl
   :: Discrete (Int,Int)
   -> Discrete Focus
   -> Discrete TreeZip
+  -> Event DragEvent
   -> Event ClickEvent    -- ^ clicks
   -> Event ClickEvent    -- ^ releases
-  -> Event DragEvent
-  -> Event MotionEvent
   -> Event KeyVal
+  -> Event MotionEvent
   -> Controller [DragEvent]
-selectCtrl bSize bFocus bZip clicks releases drags motions keys =
+selectCtrl bSize bFocus bZip drags clicks releases keys motions =
   nullController { dActive     = isActive
                   ,dState      = dSel
-                  ,keysPred    = keypred
+                  ,clickPass   = clicks   -- for now, pass all clicks
+                  ,releasePass = releases
+                  ,keysPass    = passFilter keys isActive keypass
+                  ,motionsPass = motions
                   ,bDiagChange = compositeSelection <$> value dSel
-                  ,refreshTrig = () <$ changes dSel }
+                  ,redrawTrig  = () <$ changes dSel }
  where
   isActive     = isWave <$> bFocus
   filterActive = filterApply (const <$> value isActive)
   filtOnPos :: HasXY a => Event a -> Event a
-  filtOnPos    = filterApply
-                   ((\sels drag ->
+  filtOnPos    = filterApply (value inSel)
+  inSel     :: HasXY a => Discrete (a -> Bool)
+  inSel        = (\sels drag ->
                         not (any (\drg -> contains'
                           (fromCorners (P $ L.get xyStart drg)
                                        (P $ L.get xyEnd drg))
                           $ P $ L.get getXY drag) sels) )
-                    <$> value dSel)
+                 <$> dSel
   dSel         = combiner
                  <$> accumD (Nothing, []) (eDrags <> eCurDrag <> breaks)
   -- the current selection is made of two components:
@@ -79,13 +83,12 @@ selectCtrl bSize bFocus bZip clicks releases drags motions keys =
   dChannelize :: (Functor f) => Discrete (f DragEvent -> f DragEvent)
   dChannelize = (\w f z s -> fmap (channelizeDrag w f z) s)
                   <$> bSize <*> bFocus <*> bZip
-  breaks = filterMaybes (breakKeyF <$> keys)
-  keypred [] keyval = False
-  keypred _  keyval = maybe False (const True) $ breakKeyF keyval
-  -- breakKeyF :: KeyVal -> Maybe ((Maybe DE, [DE]) ->  (Maybe DE, [DE]))
-  breakKeyF keyval
-    | keyval == 65307 = Just (const (Nothing, []))
-    | otherwise       = Nothing
+  (keypass, breaks) = splitEithers (breakKeyF <$> dSel <@> keys)
+  --breakKeyF :: KeyVal -> Either KeyVal ((Maybe DE, [DE]) ->  (Maybe DE, [DE]))
+  breakKeyF [] keyval = Left keyval
+  breakKeyF _ keyval
+    | keyval == 65307 = Right (const (Nothing, []))
+    | otherwise       = Left keyval
 
 -- | check if a drag event should be added to current selection (shift-drag)
 -- or replace it.

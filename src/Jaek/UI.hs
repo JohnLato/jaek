@@ -12,6 +12,7 @@ import           Jaek.Peaks (defaultPathMap)
 import           Jaek.Project
 import           Jaek.Tree (HTree)
 import           Jaek.UI.Actions
+import           Jaek.UI.ControlGraph
 import           Jaek.UI.Controllers
 import           Jaek.UI.Dialogs
 import           Jaek.UI.Focus
@@ -21,7 +22,6 @@ import           Jaek.UI.Render
 
 import           Reactive.Banana as FRP
 import           Diagrams.Prelude hiding (apply)
-import           Data.Tuple.Select
 
 import           System.FilePath
 
@@ -75,9 +75,6 @@ createMainWindow iProject iTree = do
     let (drags, _ndReleases) = dragEvents (clicks <> eRelease)
         bFocus  = value dFocus
         eFocus  = changes dFocus
-        bFiltInWave = const . isWave <$> bFocus
-        selCtrl  = selectCtrl bSz dFocus bZip clicks
-                              eRelease drags motions eKeys
         bFName = stepper iProject (fst <$> (eNewDoc <> eOpenDoc))
         (bRoot, _bProjName) = (takeDirectory <$> bFName,
                                takeFileName  <$> bFName)
@@ -85,20 +82,18 @@ createMainWindow iProject iTree = do
                           treeMods eFocus
         bDraw  = genBDraw mpRef bRoot (value bZip) bFocus (value bSz) (value bView)
         dFocus = genDFocus bDraw clicks
-                           (eFocChangeSet ctrlSet2)
+                           (eFocChangeSet ctrlSet)
                            $ ((\tz tmf -> tmf tz) <$> value bZip) <@> treeMods
-        -- need to keep several layers of control sets so that events can
-        -- be propagated through them.
-        ctrlSet1 = addController selCtrl []
-        edCtrl1  = keyActions bSz bView selCtrl $ filterApply bFiltInWave eKeys
-        filtKeys = sel3 $ filterController edCtrl1 clicks eRelease eKeys motions
-        ctrlSet2 = addController (waveNav bFocus bZip filtKeys) $
-                   addController edCtrl1 ctrlSet1
-        treeMods = zipChangeSet ctrlSet2
+        ctrlSet  = buildControlSet clicks eRelease eKeys motions $
+                     jaekControlGraph bSz dFocus bView bZip drags
+        treeMods = zipChangeSet ctrlSet
 
     reactimate $ (drawOnExpose mainArea drawRef <$> bDraw <*>
-                    value bView <*> bFocus <*> diagChangeSet ctrlSet2)
+                    value bView <*> bFocus <*> diagChangeSet ctrlSet)
                  <@> eMainExpose
+
+    -- add in any effects from the ControlSet
+    reactimate $ responseSet ctrlSet
 
     -- redraw the window when the state is updated by dirtying the widget.
     let redrawF = widgetQueueDraw mainArea
@@ -106,7 +101,7 @@ createMainWindow iProject iTree = do
               <> ( redrawF <$ eOpenDoc)
               <> ( redrawF <$ eNewSource)
               <> ( redrawF <$ eFocus)
-              <> ( redrawF <$ motions)
+              <> ( redrawF <$ redrawSet ctrlSet)
 
     -- save the document when requested
     reactimate $ apply ((\fp tz () -> writeProject fp tz) <$> bFName <*> value bZip)

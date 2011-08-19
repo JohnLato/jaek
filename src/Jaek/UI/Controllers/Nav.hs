@@ -14,20 +14,28 @@ import Reactive.Banana
 
 -- | navigation valid from within a Wave view
 waveNav ::
-  Behavior Focus
+  Discrete Focus
   -> Discrete TreeZip
+  -> Event ClickEvent
+  -> Event ClickEvent
   -> Event KeyVal
+  -> Event MotionEvent
   -> Controller ()
-waveNav bFoc bZip eKey =
-  nullController { dActive = pure True
-                  ,keysPred = keyPred
+waveNav bFoc bZip clicks releases keys motions =
+  nullController { dActive     = isActive
+                  ,dState      = pure ()
+                  ,clickPass   = clicks
+                  ,releasePass = releases
+                  ,keysPass    = passFilter keys isActive passkeys
+                  ,motionsPass = motions
                   ,eFocChange = focChange }
  where
-  keyPred _ kv = maybe True (const False) $ keynav undefined undefined kv
-  focChange = filterMaybes $ (keynav <$> bFoc <*> value bZip) <@> eKey
+  isActive = pure True
+  (passkeys, focChange) = splitEithers $ (keynav <$> bFoc <*> bZip)
+                                         <@> keys
 
-keynav :: Focus -> TreeZip -> KeyVal -> Maybe Focus
+keynav :: Focus -> TreeZip -> KeyVal -> Either KeyVal Focus
 keynav _foc _tz keyval
-  | keyval == 65307 = Just Nothing
-  | otherwise       = Nothing
+  | keyval == 65307 = Right Nothing
+  | otherwise       = Left keyval
 

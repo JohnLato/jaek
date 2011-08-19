@@ -1,5 +1,5 @@
 module Jaek.UI.Controllers.Edit1 (
-  keyActions
+  editCtrl1
 )
 
 where
@@ -20,36 +20,42 @@ import Data.Ord
 import Data.Maybe (isJust)
 import Data.Monoid (Monoid (..))
 
-keyActions :: 
+editCtrl1 :: 
   Discrete (Int,Int)
   -> Discrete ViewMap
   -> Controller [DragEvent]
+  -> Event ClickEvent
+  -> Event ClickEvent
   -> Event KeyVal
-  -- -> Event (TreeZip -> TreeZip)
+  -> Event MotionEvent
   -> Controller ()
-keyActions bSz bVm selCtrl eKey =
-  nullController { dActive = ((\sAct sel -> sAct && not (null sel))
-                     <$> dActive selCtrl <*> dState selCtrl)
-                     -- active with current selection
-                  ,dState = pure ()
-                  ,keysPred = keyPred
-                  ,eZipChange = zChng }
+editCtrl1 bSz bVm selCtrl clicks releases keys motions =
+  nullController { dActive = isActive
+                  ,dState      = pure ()
+                  ,clickPass   = clicks
+                  ,releasePass = releases
+                  ,keysPass    = passFilter keys isActive passkeys
+                  ,motionsPass = motions
+                  ,eZipChange  = zChng }
  where
-  zChng = filterMaybes $
-            (keyactOnSelect <$> bSz <*> bVm <*> dState selCtrl) <@> eKey
-  keyPred _ k = isJust $ keyactOnSelect undefined mempty [undefined] k
+  -- active with current selection
+  isActive = (\sAct sel -> sAct && not (null sel))
+             <$> dActive selCtrl <*> dState selCtrl
+  (passkeys, zChng) = splitEithers $
+            (keyactOnSelect <$> bSz <*> bVm <*> dState selCtrl)
+            <@> filterApply (const <$> value isActive) keys
 
 keyactOnSelect ::
   (Int,Int)
   -> ViewMap
   -> [DragEvent]
   -> KeyVal
-  -> Maybe (TreeZip -> TreeZip)
+  -> Either KeyVal (TreeZip -> TreeZip)
 keyactOnSelect sz vm sels key
-  | sels == []                = Nothing
-  | keyToChar key == Just 'm' = Just $ \tz -> mkMute (mkRegions tz sels) tz
-  | keyToChar key == Just 'd' = Just $ \tz -> mkCut (mkRegions tz sels) tz
-  | otherwise                 = Nothing
+  | sels == []                = Left key
+  | keyToChar key == Just 'm' = Right $ \tz -> mkMute (mkRegions tz sels) tz
+  | keyToChar key == Just 'd' = Right $ \tz -> mkCut (mkRegions tz sels) tz
+  | otherwise                 = Left key
   
  where
   unT :: [(a,b)] -> (a,[b])
