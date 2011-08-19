@@ -17,8 +17,6 @@ import Reactive.Banana
 import Data.Function as F
 import Data.List
 import Data.Ord
-import Data.Maybe (isJust)
-import Data.Monoid (Monoid (..))
 
 editCtrl1 :: 
   Discrete (Int,Int)

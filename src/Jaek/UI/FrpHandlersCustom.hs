@@ -24,6 +24,7 @@ import Diagrams.Backend.Cairo
 import Data.Label as L
 
 import Data.Maybe
+import Control.Arrow (second)
 import Control.Concurrent.STM
 
 -- | generate the behavior of the zipper and the viewmap.  Since
@@ -34,9 +35,10 @@ genBZip ::
   -> Event (String, HTree)
   -> Event (String, [StreamExpr])
   -> Event (TreeZip -> TreeZip)
+  -> Event (ViewMap -> ViewMap)
   -> Event Focus
   -> (Discrete TreeZip, Discrete ViewMap)
-genBZip iTree eNewDoc eNewSource eTreeMod eFocChange =
+genBZip iTree eNewDoc eNewSource eTreeMod eViewMod eFocChange =
   (fst <$> bPair, snd <$> bPair)
  where
   bPair = accumD (zipper iTree, mapFromTree iTree) $
@@ -50,6 +52,7 @@ genBZip iTree eNewDoc eNewSource eTreeMod eFocChange =
                   let z' = updateF zp
                   in (z', updateMap z' MdNode mp)) <$> eTreeMod)
            <> ((\newFoc (zp,mp) -> (goToFocus zp newFoc, mp)) <$> eFocChange)
+           <> (second <$> eViewMod)
 
 -- | Generate @Discrete (IO Focus)@
 --  the @Event Focus@ are emitted when the focus changes, and can be used to

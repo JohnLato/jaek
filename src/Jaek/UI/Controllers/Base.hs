@@ -28,6 +28,7 @@ module Jaek.UI.Controllers.Base (
  ,eFocChangeSet
  ,redrawSet
  ,responseSet
+ ,viewChangeSet
  ,zipChangeSet
  -- ** individual controller functions
  ,nullController
@@ -111,6 +112,9 @@ eFocChangeSet = mconcat . map (extract eFocChange)
 
 zipChangeSet :: ControlSet -> Event (TreeZip -> TreeZip)
 zipChangeSet = mconcat . map (extract eZipChange)
+
+viewChangeSet :: ControlSet -> Event (ViewMap -> ViewMap)
+viewChangeSet = mconcat . map (extract eViewChange)
 
 -- | Get a behavior of all Diagram modifier functions from the
 -- ControlSet, with the first Controllers applied earliest.

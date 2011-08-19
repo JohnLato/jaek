@@ -15,7 +15,6 @@ import           Jaek.UI.Actions
 import           Jaek.UI.ControlGraph
 import           Jaek.UI.Controllers
 import           Jaek.UI.Dialogs
-import           Jaek.UI.Focus
 import           Jaek.UI.FrpHandlersCustom
 import           Jaek.UI.MenuActionHandlers
 import           Jaek.UI.Render
@@ -79,7 +78,7 @@ createMainWindow iProject iTree = do
         (bRoot, _bProjName) = (takeDirectory <$> bFName,
                                takeFileName  <$> bFName)
         (bZip, bView) = genBZip iTree (eNewDoc <> eOpenDoc) eNewSource
-                          treeMods eFocus
+                          treeMods (viewChangeSet ctrlSet) eFocus
         bDraw  = genBDraw mpRef bRoot (value bZip) bFocus (value bSz) (value bView)
         dFocus = genDFocus bDraw clicks
                            (eFocChangeSet ctrlSet)

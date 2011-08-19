@@ -18,6 +18,7 @@ module Jaek.Tree (
  ,TreeZip
  ,iZip
  ,newSource
+ ,goToHead
  ,goToRef
  ,nodePath
  ,getPath
@@ -135,6 +136,10 @@ addChild :: (TreePath -> Node) -> HTree -> (HTree, Int)
 addChild gen t@(Node nd childs) =
   let path = newChildPath t
   in (Node nd (childs ++ [Node (gen path) []]), last path)
+
+-- | Go to the head reference of the zipper
+goToHead :: TreeZip -> TreeZip
+goToHead = zipper . fromZipper
 
 -- | Go to a reference within the current zipper
 goToRef :: NodeRef -> TreeZip -> Maybe TreeZip

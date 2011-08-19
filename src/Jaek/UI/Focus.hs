@@ -3,6 +3,7 @@ module Jaek.UI.Focus (
  ,isTree
  ,isWave
  ,goToFocus
+ ,treeFocus
 )
 
 where
@@ -11,6 +12,9 @@ import Jaek.Tree
 import Data.Maybe
 
 type Focus = Maybe [Int]
+
+treeFocus :: Focus
+treeFocus = Just []
 
 isTree :: Focus -> Bool
 isTree Nothing   = True

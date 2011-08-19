@@ -9,6 +9,8 @@ module Jaek.UI.Views (
   ,mapFromTree
   ,getView
   ,updateMap
+  ,slideX
+  ,slideY
 )
 
 where
@@ -29,6 +31,7 @@ data ViewChange =
     NewDoc
   | AddSrc
   | MdNode
+  | ModView View
   deriving (Eq, Show)
 
 -- | Information about what's currently in view...
@@ -45,6 +48,7 @@ updateMap :: TreeZip -> ViewChange -> ViewMap -> ViewMap
 updateMap _z NewDoc _m = iMap
 updateMap zp AddSrc mp = addWaveNode zp mp
 updateMap zp MdNode mp = addWaveNode zp mp
+updateMap zp (ModView view) mp = changeWaveNode zp view mp
 
 iMap :: ViewMap
 iMap = mapFromTree $ fromZipper iZip
@@ -70,3 +74,16 @@ addWaveNode tz mp = M.insert (liftT nodePath cur) (WaveView 0 srcdur) mp
  where
   cur    = hole tz
   srcdur = foldl' max 0 . map getDur $ getExprs cur
+
+changeWaveNode :: TreeZip -> View -> ViewMap -> ViewMap
+changeWaveNode tz v mp = M.adjust (const v) (liftT nodePath $ hole tz) mp
+
+slideX :: Double -> View -> View
+slideX dist (FullView xs ys xOff yOff) = FullView xs ys (xOff+dist) yOff
+slideX dist (WaveView off dur) = WaveView nOff dur
+ where
+   nOff = off + (round $ dist * fI dur)
+
+slideY :: Double -> View -> View
+slideY dist (FullView xs ys xOff yOff) = FullView xs ys xOff (yOff+dist)
+slideY _    waveView                   = waveView
