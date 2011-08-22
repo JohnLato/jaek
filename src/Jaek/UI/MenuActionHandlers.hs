@@ -26,21 +26,22 @@ import Reactive.Banana
 
 createHandlers :: ActionGroup -> Window -> IO ()
 createHandlers actGrp win =
-  mapM_ (\(act,fn) -> do
+  mapM_ (\(act,fn,accel) -> do
           z <- act
           fn win z
-          actionGroupAddActionWithAccel actGrp z Nothing
+          actionGroupAddActionWithAccel actGrp z accel
         )
-        [(quitAction, quitHandler)]
+        [(quitAction, quitHandler, Just "<Control>q")]
 
 defaultMkAction
   :: IO Action
+  -> Maybe String
   -> ActionGroup
   -> Window
   -> NetworkDescription (Event ())
-defaultMkAction ioact actGrp _win = do
+defaultMkAction ioact accel actGrp _win = do
   act <- liftIO ioact
-  liftIO $ actionGroupAddActionWithAccel actGrp act Nothing
+  liftIO $ actionGroupAddActionWithAccel actGrp act accel
   maybeEvent0 act $ return $ Just ()
 
 -- ------------------------------------
@@ -63,28 +64,28 @@ maybeEvent0 act ops = do
 newHandler :: ActionGroup -> Window -> NetworkDescription (Event (String, HTree))
 newHandler actGrp _win = do
   act <- liftIO newAction
-  liftIO $ actionGroupAddActionWithAccel actGrp act Nothing
+  liftIO $ actionGroupAddActionWithAccel actGrp act (Just "<Control>N")
   maybeEvent0 act newProjectDialog
 
 -- | Load a saved project file
 openHandler :: ActionGroup -> Window -> NetworkDescription (Event (String, HTree))
 openHandler actGrp _win = do
   act <- liftIO openAction
-  liftIO $ actionGroupAddActionWithAccel actGrp act Nothing
+  liftIO $ actionGroupAddActionWithAccel actGrp act (Just "<Control>O")
   maybeEvent0 act openProjectDialog
 
 -- | Save the current project file
 saveHandler :: ActionGroup -> Window -> NetworkDescription (Event ())
 saveHandler actGrp _win = do
   act <- liftIO saveAction
-  liftIO $ actionGroupAddActionWithAccel actGrp act Nothing
+  liftIO $ actionGroupAddActionWithAccel actGrp act (Just "<Control>S")
   maybeEvent0 act $ return $ Just ()
 
 -- |import a new audio source
 importHandler :: ActionGroup -> Window -> NetworkDescription (Event (String, [StreamExpr]))
 importHandler actGrp _win = do
   act <- liftIO importAction
-  liftIO $ actionGroupAddActionWithAccel actGrp act Nothing
+  liftIO $ actionGroupAddActionWithAccel actGrp act (Just "<Control>I")
   maybeEvent0 act $ do
     fc <- fileChooserDialogNew (Just "Select an audio file to import")
              Nothing
@@ -115,8 +116,8 @@ importHandler actGrp _win = do
 
 -- | delete action
 deleteHandler :: ActionGroup -> Window -> NetworkDescription (Event ())
-deleteHandler = defaultMkAction deleteAction
+deleteHandler = defaultMkAction deleteAction $ Just "D"
 
 -- | mute action
 muteHandler :: ActionGroup -> Window -> NetworkDescription (Event ())
-muteHandler = defaultMkAction muteAction
+muteHandler = defaultMkAction muteAction $ Just "M"
