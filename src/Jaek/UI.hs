@@ -36,6 +36,10 @@ uiDef =
   \      <menuitem name=\"Import\" action=\"ImportAction\" />\
   \      <menuitem name=\"Close\" action=\"QuitAction\" />\
   \    </menu>\
+  \    <menu name=\"Edit\" action=\"EditAction\">\
+  \      <menuitem name=\"Mute\" action=\"MuteAction\" />\
+  \      <menuitem name=\"Delete\" action=\"DeleteAction\" />\
+  \    </menu>\
   \  </menubar>\
   \</ui>"
 
@@ -87,7 +91,7 @@ createMainWindow iProject iTree = do
                            (eFocChangeSet ctrlSet)
                            $ ((\tz tmf -> tmf tz) <$> value bZip) <@> treeMods
         ctrlSet  = buildControlSet clicks eRelease eKeys motions $
-                     jaekControlGraph bSz dFocus bView bZip drags
+                     jaekControlGraph evtSrcs bSz dFocus bView bZip drags
         treeMods = zipChangeSet ctrlSet
 
     reactimate $ (drawOnExpose mainArea drawRef <$> bDraw <*>

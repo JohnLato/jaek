@@ -17,7 +17,7 @@ where
 import Graphics.UI.Gtk
 
 defActions :: [IO Action]
-defActions = [fileAction]
+defActions = [fileAction,editAction]
 
 menuActions :: [IO Action]
 menuActions = [newAction, quitAction, propsAction]
@@ -48,6 +48,9 @@ renderAction = actionNew "RenderAction" "Render" Nothing Nothing
 
 -- -------------------------------------------
 -- editing actions
+
+editAction :: IO Action
+editAction = actionNew "EditAction" "Edit" Nothing Nothing
 
 deleteAction :: IO Action
 deleteAction = actionNew "DeleteAction" "Delete" Nothing Nothing
