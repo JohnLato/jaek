@@ -1,7 +1,6 @@
 module Jaek.UI.Actions (
   menuActions
  ,defActions
- ,fileAction
  ,newAction
  ,openAction
  ,saveAction
@@ -9,6 +8,8 @@ module Jaek.UI.Actions (
  ,propsAction
  ,quitAction
  ,renderAction
+ ,deleteAction
+ ,muteAction
 )
 
 where
@@ -44,3 +45,12 @@ propsAction = actionNew "PropsAction" "Properties" Nothing Nothing
 
 renderAction :: IO Action
 renderAction = actionNew "RenderAction" "Render" Nothing Nothing
+
+-- -------------------------------------------
+-- editing actions
+
+deleteAction :: IO Action
+deleteAction = actionNew "DeleteAction" "Delete" Nothing Nothing
+
+muteAction :: IO Action
+muteAction = actionNew "MuteAction" "Mute" Nothing Nothing

@@ -7,6 +7,8 @@ module Jaek.UI.MenuActionHandlers (
  ,openHandler
  ,saveHandler
  ,importHandler
+ ,deleteHandler
+ ,muteHandler
  ,module Jaek.UI.FrpHandlers
 )
 
@@ -30,6 +32,16 @@ createHandlers actGrp win =
           actionGroupAddActionWithAccel actGrp z Nothing
         )
         [(quitAction, quitHandler)]
+
+defaultMkAction
+  :: IO Action
+  -> ActionGroup
+  -> Window
+  -> NetworkDescription (Event ())
+defaultMkAction ioact actGrp _win = do
+  act <- liftIO ioact
+  liftIO $ actionGroupAddActionWithAccel actGrp act Nothing
+  maybeEvent0 act $ return $ Just ()
 
 -- ------------------------------------
 -- imperative-style handlers
@@ -95,3 +107,16 @@ importHandler actGrp _win = do
               Left err    -> print err >> return Nothing
               Right exprs -> return $ Just (fp, exprs)
       _ -> widgetDestroy fc >> return Nothing
+
+
+-- -----------------------------------------
+-- edit event sources
+
+
+-- | delete action
+deleteHandler :: ActionGroup -> Window -> NetworkDescription (Event ())
+deleteHandler = defaultMkAction deleteAction
+
+-- | mute action
+muteHandler :: ActionGroup -> Window -> NetworkDescription (Event ())
+muteHandler = defaultMkAction muteAction

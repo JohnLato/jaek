@@ -12,6 +12,7 @@ import           Jaek.Peaks (defaultPathMap)
 import           Jaek.Project
 import           Jaek.Tree (HTree)
 import           Jaek.UI.Actions
+import           Jaek.UI.AllSources
 import           Jaek.UI.ControlGraph
 import           Jaek.UI.Controllers
 import           Jaek.UI.Dialogs
@@ -60,10 +61,12 @@ createMainWindow iProject iTree = do
     [KeyPressMask, ButtonPressMask, ButtonReleaseMask, ButtonMotionMask]
 
   network <- FRP.compile $ do
-    eNewDoc     <- newHandler standardGroup win
-    eOpenDoc    <- openHandler standardGroup win
-    eSaveDoc    <- saveHandler standardGroup win
-    eNewSource  <- importHandler standardGroup win
+    evtSrcs     <- makeSources standardGroup win
+    let eNewDoc  = getNewSource evtSrcs
+        eOpenDoc = getOpenSource evtSrcs
+        eSaveDoc = getSaveSource evtSrcs
+        eNewSource = getImportSource evtSrcs
+
     eMainExpose <- exposeEvents mainArea
     -- only the window receives keypress events...
     eKeys       <- keypressEvents win

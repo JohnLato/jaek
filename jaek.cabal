@@ -67,6 +67,7 @@ Executable jaek
                       ,Jaek.Tree
                       ,Jaek.UI
                       ,Jaek.UI.Actions
+                      ,Jaek.UI.AllSources
                       ,Jaek.UI.ControlGraph
                       ,Jaek.UI.Controllers.Base
                       ,Jaek.UI.Controllers.Drags
