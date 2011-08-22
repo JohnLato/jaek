@@ -117,6 +117,7 @@ createMainWindow iProject iTree = do
   ui <- uiManagerNew
   ignore $ uiManagerAddUiFromString ui uiDef
   uiManagerInsertActionGroup ui standardGroup 0
+  uiManagerGetAccelGroup ui >>= windowAddAccelGroup win
 
   ignore $ onDestroy win mainQuit
   ignore $ onSizeRequest win $ return (Requisition 700 500)
