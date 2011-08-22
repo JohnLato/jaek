@@ -43,20 +43,16 @@ drawAt  mpRef  root zp Nothing    win   vmap =
 drawAt _mpRef _root zp (Just []) (_x,_y) vmap =
   let tree    = fromZipper zp
       (FullView xScale yScale xOff yOff) = getView vmap tree
-      -- using translations would be better than struts, but since
-      -- the backend 'toGtkCoords' function auto-recenters, it's not possible
+      -- since the backend 'toGtkCoords' function auto-recenters,
+      -- it's not possible to use it
       -- at the moment.  I should fix that for diagrams-0.4
-      xMod d = if xOff >= 0
-                 then d ||| strutX xOff
-                 else strutX (abs xOff) ||| d
-      yMod d = if yOff >= 0
-                 then strutY yOff === d
-                 else d === strutY (abs yOff)
-  in toGtkCoords
-       . scaleY (180 * yScale)
-       . scaleX (180 * xScale)
-       . xMod
-       . yMod
+      trans d = translate (szCon * xScale * negate xOff, szCon * yScale * yOff)
+                $ translate ((0.5 *. P (size2D d)) .-. center2D d) d
+      szCon = 180
+  in   trans
+       . reflectY
+       . scaleY (szCon * yScale)
+       . scaleX (szCon * xScale)
        $ drawTree tree
 drawAt mpRef root zp (Just ref) (x,y) vmap =
   maybe (toGtkCoords . scale (0.25* fI x) . drawTree $ fromZipper zp)
