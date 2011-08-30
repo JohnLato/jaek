@@ -72,7 +72,7 @@ Executable jaek
                       ,Jaek.UI.Controllers.Base
                       ,Jaek.UI.Controllers.Drags
                       ,Jaek.UI.Controllers.Edit1
-                      ,Jaek.UI.Controllers.Modes
+                      ,Jaek.UI.Controllers.EditModes
                       ,Jaek.UI.Controllers.Nav
                       ,Jaek.UI.Controllers.Wave
                       ,Jaek.UI.Dialogs
