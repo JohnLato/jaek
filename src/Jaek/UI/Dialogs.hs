@@ -30,6 +30,14 @@ warnOnException e = do
   ignore $ dialogRun dlg
   widgetDestroy dlg
 
+-- | Add Cancel and Ok buttons to a dialog and run it
+dlgHarness :: DialogClass dlg => dlg -> IO ResponseId
+dlgHarness dlg = do
+  dialogAddButton dlg stockCancel ResponseCancel
+  dialogAddButton dlg stockOk     ResponseOk
+  widgetShowAll dlg
+  dialogRun dlg
+
 initialMenu :: IO (Dialog, RadioButton, RadioButton)
 initialMenu = do
   dlg <- dialogNew
@@ -70,10 +78,7 @@ newProjectDialog = do
            Nothing
            FileChooserActionCreateFolder
            []
-  dialogAddButton fc stockCancel ResponseCancel
-  dialogAddButton fc stockOk     ResponseOk
-  widgetShowAll fc
-  resp <- dialogRun fc
+  resp <- dlgHarness fc
   case resp of
     ResponseOk -> do
       mfp <- try $ runMaybeT $ do
@@ -97,10 +102,7 @@ openProjectDialog = do
            FileChooserActionOpen
            []
   fileChooserSetSelectMultiple fc False
-  dialogAddButton fc stockCancel ResponseCancel
-  dialogAddButton fc stockOk     ResponseOk
-  widgetShowAll fc
-  resp <- dialogRun fc
+  resp <- dlgHarness fc
   case resp of
     ResponseOk -> runMaybeT $ do
       fp <- MaybeT $ fileChooserGetFilename fc

@@ -134,16 +134,18 @@ keypressEvents widget = event1 $ \k ->
     liftIO $ k kv
 
 clickEvents :: WidgetClass w => w -> NetworkDescription (Event ClickEvent)
-clickEvents widget = event1 $ \k ->
-  ignore $ on widget buttonPressEvent $ tryEvent $ do
-    click <- eventClick
-    (x,y) <- eventCoordinates
-    mods  <- eventModifier
-    liftIO $ k $ ClickE (click2ClickType click) (map fromModifier mods) x y
+clickEvents = clickEvents' buttonPressEvent
 
 releaseEvents :: WidgetClass w => w -> NetworkDescription (Event ClickEvent)
-releaseEvents widget = event1 $ \k ->
-  ignore $ on widget buttonReleaseEvent $ tryEvent $ do
+releaseEvents = clickEvents' buttonReleaseEvent
+
+clickEvents'
+  :: WidgetClass w
+   => Signal w (EventM EButton Bool)
+   -> w
+   -> NetworkDescription (Event ClickEvent)
+clickEvents' evt widget = event1 $ \k ->
+  ignore $ on widget evt $ tryEvent $ do
     click <- eventClick
     (x,y) <- eventCoordinates
     mods  <- eventModifier
