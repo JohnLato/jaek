@@ -57,8 +57,8 @@ drawAt _mpRef _root zp (Just []) (_x,_y) vmap =
 drawAt mpRef root zp (Just ref) (x,y) vmap =
   maybe (toGtkCoords . scale (0.25* fI x) . drawTree $ fromZipper zp)
         (\(z', v) -> let d = alignB
-                             . vcat' (with {catMethod=Distrib, sep=1.001})
-                             . map (centerY (strutY 1) |||)
+                             . vcat' (with {catMethod=Distrib, sep=2.001})
+                             . map (centerY (strutY 2) |||)
                              . reverse
                              . parMap rseq (renderPeaks off dur x)
                              . unsafePerformIO
