@@ -22,7 +22,7 @@ jaekControlGraph
   -> Event DragEvent
   -> ControlGraph ()
 jaekControlGraph sources dSize dFocus dView dZip drags = do
-  baseNav      <- buildController (allNav dFocus dZip dView)
+  baseNav      <- buildController (allNav sources dFocus dZip dView)
   wvSelectCtrl <- buildController (selectCtrl dSize dFocus dZip drags)
   addController $ bindController (editCtrl1  dSize dView wvSelectCtrl sources)
                                  wvSelectCtrl

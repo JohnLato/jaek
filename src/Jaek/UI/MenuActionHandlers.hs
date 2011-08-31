@@ -7,6 +7,8 @@ module Jaek.UI.MenuActionHandlers (
  ,openHandler
  ,saveHandler
  ,importHandler
+ ,zoomInHandler
+ ,zoomOutHandler
  ,deleteHandler
  ,muteHandler
  ,module Jaek.UI.FrpHandlers
@@ -21,6 +23,7 @@ import Jaek.Tree
 import Jaek.UI.Actions
 import Jaek.UI.Dialogs
 import Jaek.UI.FrpHandlers
+import Jaek.UI.Views (Zoom (..))
 
 import Reactive.Banana
 
@@ -109,6 +112,19 @@ importHandler actGrp _win = do
               Right exprs -> return $ Just (fp, exprs)
       _ -> widgetDestroy fc >> return Nothing
 
+
+-- -----------------------------------------
+-- view sources
+
+-- | zoom in action
+zoomInHandler :: ActionGroup -> Window -> NetworkDescription (Event Zoom)
+zoomInHandler a w =
+  (Zoom 0.5 <$) <$> defaultMkAction zoomInAction (Just "<Control>+") a w
+
+-- | zoom out action
+zoomOutHandler :: ActionGroup -> Window -> NetworkDescription (Event Zoom)
+zoomOutHandler a w =
+  (Zoom 2 <$)   <$> defaultMkAction zoomOutAction (Just "<Control>-") a w
 
 -- -----------------------------------------
 -- edit event sources

@@ -44,6 +44,7 @@ Executable jaek
                       ,uniplate       >= 1.6     && < 1.7
                       ,utf8-string    >= 0.3.0   && < 0.4
                       ,vector         >= 0.7     && < 0.10
+                      ,vector-space   >= 0.7     && < 0.9
                       ,attoparsec-binary          >= 0.1.0    && < 0.2
                       ,attoparsec-iteratee        >= 0.3.0    && < 0.4
                       ,listlike-instances         >= 0.1      && < 1

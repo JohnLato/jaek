@@ -7,12 +7,14 @@ where
 
 import Graphics.UI.Gtk
 import Jaek.Tree
+import Jaek.UI.AllSources
 import Jaek.UI.Controllers.Base
 import Jaek.UI.Focus
 import Jaek.UI.FrpHandlers
 import Jaek.UI.Views
 
 import Reactive.Banana
+import Diagrams.Prelude ((<>))
 
 -- | navigation valid from within a Wave view
 waveNav ::
@@ -43,7 +45,8 @@ waveKey _foc _tz keyval
 
 -- | navigation valid from within both views
 allNav ::
-  Discrete Focus
+  Sources
+  -> Discrete Focus
   -> Discrete TreeZip
   -> Discrete ViewMap
   -> Event ClickEvent
@@ -51,20 +54,34 @@ allNav ::
   -> Event KeyVal
   -> Event MotionEvent
   -> Controller ()
-allNav dFocus dZip dVmap clicks releases keys motions =
+allNav sources dFocus dZip dVmap clicks releases keys motions =
   nullController { dActive     = isActive
                   ,dState      = pure ()
                   ,clickPass   = clicks
                   ,releasePass = releases
-                  ,keysPass    = passkeys
+                  ,keysPass    = passkeys <> pass2
                   ,motionsPass = motions
-                  ,eViewChange = vmapChange
-                  ,redrawTrig  = () <$ vmapChange }
+                  ,eViewChange = vmapChange <> zoomChange
+                  ,redrawTrig  = (() <$ vmapChange) <> (() <$ zooms) }
  where
   isActive = pure True
   dView = (\vm z foc -> getView vm . hole $ goToFocus z foc)
           <$> dVmap <*> dZip <*> dFocus
   (passkeys, vmapChange) = splitEithers $ (treeKey <$> dView <*> dZip) <@> keys
+  (pass2, zooms')        = splitEithers $ zoomKey <$> keys
+  zooms                  = zooms'
+                           <> getZoomInSource sources
+                           <> getZoomOutSource sources
+  zoomChange             = (zoomF <$> dView <*> dZip) <@> zooms
+
+zoomKey :: KeyVal -> Either KeyVal Zoom
+zoomKey 43 = Right $ Zoom 0.5
+zoomKey 95 = Right $ Zoom 2
+zoomKey k  = Left k
+
+zoomF :: View -> TreeZip -> Zoom -> ViewMap -> ViewMap
+zoomF v@(FullView {}) tz zm = updateMap (goToHead tz) . ModView $ zoom zm v
+zoomF v               tz zm = updateMap tz            . ModView $ zoom zm v
 
 treeKey :: View -> TreeZip -> KeyVal -> Either KeyVal (ViewMap -> ViewMap)
 treeKey v@(FullView {}) tz keyval = case keyval of
@@ -83,3 +100,4 @@ treeKey v@(WaveView {}) tz keyval = case keyval of
  where
   -- always set zipper to the root node path, just for updating the map
   uf = updateMap tz . ModView
+

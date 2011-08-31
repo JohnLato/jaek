@@ -42,13 +42,15 @@ drawAt  mpRef  root zp Nothing    win   vmap =
   drawAt mpRef root zp (Just []) win vmap
 drawAt _mpRef _root zp (Just []) (_x,_y) vmap =
   let tree    = fromZipper zp
-      (FullView xScale yScale xOff yOff) = getView vmap tree
+      (FullView xDist yDist xOff yOff) = getView vmap tree
+      xScale = recip xDist
+      yScale = recip yDist
+      szCon  = 180
       -- since the backend 'toGtkCoords' function auto-recenters,
       -- it's not possible to use it
       -- at the moment.  I should fix that for diagrams-0.4
       trans d = translate (szCon * xScale * negate xOff, szCon * yScale * yOff)
                 $ translate ((0.5 *. P (size2D d)) .-. center2D d) d
-      szCon = 180
   in   trans
        . reflectY
        . scaleY (szCon * yScale)

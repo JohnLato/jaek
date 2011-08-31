@@ -1,9 +1,12 @@
+{-# LANGUAGE TypeFamilies #-}
+
 -- | define a map from Node -> View, to keep track of what's in view.
 --   not much in here, but I expect it'll expand in the future.
 module Jaek.UI.Views (
    ViewMap
   ,View (..)
   ,ViewChange (..)
+  ,Zoom (..)
   ,isWaveView
   ,iMap
   ,mapFromTree
@@ -11,6 +14,7 @@ module Jaek.UI.Views (
   ,updateMap
   ,slideX
   ,slideY
+  ,zoom
 )
 
 where
@@ -24,6 +28,8 @@ import qualified Data.HashMap.Strict as M
 import           Data.List (foldl')
 import           Data.Maybe
 import           Data.Tree
+import           Data.VectorSpace
+import           Control.Arrow ((***))
 
 type ViewMap = M.HashMap TreePath View
 
@@ -36,7 +42,7 @@ data ViewChange =
 
 -- | Information about what's currently in view...
 data View =
-    FullView !Double !Double !Double !Double   -- ^ xScale, yScale, xOff, yOff
+    FullView !Double !Double !Double !Double   -- ^ xSize, ySize, xOff, yOff
   | WaveView !SampleCount !SampleCount -- ^ streamOff, streamDur
   deriving (Eq, Show)
 
@@ -87,3 +93,23 @@ slideX dist (WaveView off dur) = WaveView nOff dur
 slideY :: Double -> View -> View
 slideY dist (FullView xs ys xOff yOff) = FullView xs ys xOff (yOff+dist)
 slideY _    waveView                   = waveView
+
+-- | Zoom factor.
+--  0 < z < 1  -> zoom in
+--  z == 1     -> unchanged
+--  z > 1      -> zoom out
+data Zoom = Zoom Double deriving (Eq, Show, Ord)
+
+zoom :: Zoom -> View -> View
+zoom (Zoom zf) (FullView xs ys xOff yOff) =
+  let ((xOff', yOff'), (xs', ys')) = zoom' zf (xOff, yOff) (xs,ys)
+  in FullView xs' ys' xOff' yOff'
+zoom (Zoom zf) (WaveView off dur) =
+  let (off', dur') = (round *** round) $ zoom' zf (fI off :: Double) (fI dur)
+  in WaveView off' dur'
+
+zoom' :: (VectorSpace v, Scalar v ~ Double) => Scalar v -> v -> v -> (v,v)
+zoom' zf p0 d0 =
+  let d1 = zf *^ d0
+      p1 = p0 ^+^ (0.5 * (1-zf)) *^ d0
+  in (p1,d1)

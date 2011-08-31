@@ -8,6 +8,8 @@ module Jaek.UI.Actions (
  ,propsAction
  ,quitAction
  ,renderAction
+ ,zoomInAction
+ ,zoomOutAction
  ,deleteAction
  ,muteAction
 )
@@ -17,13 +19,25 @@ where
 import Graphics.UI.Gtk
 
 defActions :: [IO Action]
-defActions = [fileAction,editAction]
+defActions = [fileAction,editAction,viewAction]
 
 menuActions :: [IO Action]
-menuActions = [newAction, quitAction, propsAction]
+menuActions = [newAction, quitAction, propsAction, zoomInAction, zoomOutAction]
+
+-- -------------------------------------
+-- actions for menu items that don't really do anything
 
 fileAction :: IO Action
 fileAction = actionNew "FileAction" "File" Nothing Nothing
+
+editAction :: IO Action
+editAction = actionNew "EditAction" "Edit" Nothing Nothing
+
+viewAction :: IO Action
+viewAction = actionNew "ViewAction" "View" Nothing Nothing
+
+-- -------------------------------------
+-- file menu actions
 
 openAction :: IO Action
 openAction = actionNew "OpenAction" "Open" Nothing Nothing
@@ -47,10 +61,16 @@ renderAction :: IO Action
 renderAction = actionNew "RenderAction" "Render" Nothing Nothing
 
 -- -------------------------------------------
--- editing actions
+-- view actions
 
-editAction :: IO Action
-editAction = actionNew "EditAction" "Edit" Nothing Nothing
+zoomInAction :: IO Action
+zoomInAction = actionNew "ZoomInAction" "ZoomIn" Nothing Nothing
+
+zoomOutAction :: IO Action
+zoomOutAction = actionNew "ZoomOutAction" "ZoomOut" Nothing Nothing
+
+-- -------------------------------------------
+-- editing actions
 
 deleteAction :: IO Action
 deleteAction = actionNew "DeleteAction" "Delete" Nothing Nothing

@@ -40,6 +40,10 @@ uiDef =
   \      <menuitem name=\"Mute\" action=\"MuteAction\" />\
   \      <menuitem name=\"Delete\" action=\"DeleteAction\" />\
   \    </menu>\
+  \    <menu name=\"View\" action=\"ViewAction\">\
+  \      <menuitem name=\"Zoom In\" action=\"ZoomInAction\" />\
+  \      <menuitem name=\"Zoom Out\" action=\"ZoomOutAction\" />\
+  \    </menu>\
   \  </menubar>\
   \</ui>"
 
