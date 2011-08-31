@@ -30,7 +30,9 @@ renderPeaks off dur w pk =
       -- I'll give it a try at any rate...
       rvec vec = U.generate (w `div` 2) (\i ->
                    let ix = getIx (2*i)
-                   in if ix >= U.length vec then 0 else pk2Double $ vec U.! ix)
+                   in  if ix < 0 || ix >= U.length vec
+                         then 0
+                         else pk2Double $ vec U.! ix)
       toDgr = fmap (const (First Nothing))
               . stroke
               . fromVertices
