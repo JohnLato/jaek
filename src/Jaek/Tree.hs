@@ -215,12 +215,12 @@ mod2 nm chns gen zp =
 -- If no valid channels are specified, the zipper is unchanged.
 mkCut :: [(Int, SampleCount, SampleCount)] -> TreeZip -> TreeZip
 mkCut sels = mod1 "mkCut" (map sel1 sels) $ \cn ->
-  map (\(i,off,dur) -> Cut cn off dur) $ filter (\i -> sel1 i == cn) sels
+  map (\(_,off,dur) -> Cut cn off dur) $ filter (\i -> sel1 i == cn) sels
 
 -- | Mute the current node in the specific locations
 mkMute :: [(Int, SampleCount, SampleCount)] -> TreeZip -> TreeZip
 mkMute sels = mod1 "mkMute" (map sel1 sels) $ \cn ->
-  map (\(i,off,dur) -> Mute cn off dur) $ filter (\i -> sel1 i == cn) sels
+  map (\(_,off,dur) -> Mute cn off dur) $ filter (\i -> sel1 i == cn) sels
 
 -- | Perform an insert at the current node.
 mkInsert

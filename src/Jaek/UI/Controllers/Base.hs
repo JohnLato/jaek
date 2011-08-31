@@ -51,8 +51,6 @@ import           Reactive.Banana
 import           Data.Data()
 import qualified Control.Monad.State as St
 
-type Pred st e = st -> e -> Bool
-
 -- | used for creating pass-through events.  Typical usage would be
 -- 
 -- > passFilter clicks isActive passclicks

@@ -13,8 +13,6 @@ import Jaek.UI.MenuActionHandlers
 import Jaek.UI.Views (Zoom (..))
 import Reactive.Banana
 
-import Control.Applicative
-
 data Sources = Sources {
   getNewSource     :: Event (String, HTree)
  ,getOpenSource    :: Event (String, HTree)
