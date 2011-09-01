@@ -17,8 +17,9 @@ import           Diagrams.Prelude hiding (apply)
 
 import qualified Data.HashMap.Strict as M
 
-import           Control.Parallel.Strategies
+import           Control.Arrow ((***))
 import           Control.Concurrent.STM
+import           Control.Parallel.Strategies
 
 import           System.IO.Unsafe (unsafePerformIO)
 
@@ -40,18 +41,19 @@ drawAt
   -> AnnDiagram Cairo R2 (First TreePath)
 drawAt  mpRef  root zp Nothing    win   vmap =
   drawAt mpRef root zp (Just []) win vmap
-drawAt _mpRef _root zp (Just []) (_x,_y) vmap =
+drawAt _mpRef _root zp (Just []) win vmap =
   let tree    = fromZipper zp
       (FullView xDist yDist xOff yOff) = getView vmap tree
       xScale = recip xDist
       yScale = recip yDist
       szCon  = 180
+      win' = (fI *** fI) win
       -- since the backend 'toGtkCoords' function auto-recenters,
       -- it's not possible to use it
       -- at the moment.  I should fix that for diagrams-0.4
-      trans d = translate (szCon * xScale * negate xOff, szCon * yScale * yOff)
-                $ translate ((0.5 *. P (size2D d)) .-. center2D d) d
-  in   trans
+      pos d = let P p = center2D d
+              in translate (szCon *^ (negate xOff, yOff) ^-^ p) d
+  in   pos
        . reflectY
        . scaleY (szCon * yScale)
        . scaleX (szCon * xScale)
