@@ -47,7 +47,6 @@ drawAt _mpRef _root zp (Just []) win vmap =
       xScale = recip xDist
       yScale = recip yDist
       szCon  = 180
-      win' = (fI *** fI) win
       -- since the backend 'toGtkCoords' function auto-recenters,
       -- it's not possible to use it
       -- at the moment.  I should fix that for diagrams-0.4
