@@ -1,4 +1,6 @@
-{-# LANGUAGE TypeOperators, TypeSynonymInstances #-}
+{-# LANGUAGE TypeOperators
+            ,TypeSynonymInstances
+            ,FlexibleInstances #-}
 
 -- | general GTK FRP functions.  These may be split into a separate
 -- module in the future...

@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
 
 -- | Serialize a Jaek project file and its various component types.
 module Jaek.Project.Serialize (
