@@ -17,6 +17,7 @@ module Jaek.UI.FrpHandlers (
  ,dragYs
   -- * Other stuff
  ,mapFilterE
+ ,sampleD
  ,filterMaybes
  ,splitEithers
  ,exposeEvents
@@ -99,6 +100,9 @@ fullAcc _        = False
 fromAcc :: DragAcc -> DragEvent
 fromAcc (Full d) = d
 fromAcc _ = undefined
+
+sampleD :: Discrete a -> Event () -> Event a
+sampleD dscr e = (const <$> dscr) <@> e
 
 mapFilterE :: (a -> b) -> (a -> Bool) -> Event a -> Event b
 mapFilterE f p e = f <$> filterE p e
