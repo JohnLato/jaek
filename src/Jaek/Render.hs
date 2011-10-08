@@ -17,7 +17,6 @@ import           Diagrams.Prelude hiding (apply)
 
 import qualified Data.HashMap.Strict as M
 
-import           Control.Arrow ((***))
 import           Control.Concurrent.STM
 import           Control.Parallel.Strategies
 

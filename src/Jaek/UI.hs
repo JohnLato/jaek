@@ -82,8 +82,7 @@ createMainWindow iProject iTree = do
     bSz         <- genDSize mainArea
     eRelease    <- releaseEvents mainArea
     motions     <- motionEvents mainArea
-    let (drags, _ndReleases) = dragEvents (clicks <> eRelease)
-        bFocus  = value dFocus
+    let bFocus  = value dFocus
         eFocus  = changes dFocus
         bFName = stepper iProject (fst <$> (eNewDoc <> eOpenDoc))
         (bRoot, _bProjName) = (takeDirectory <$> bFName,
@@ -95,7 +94,7 @@ createMainWindow iProject iTree = do
                            (eFocChangeSet ctrlSet)
                            $ ((\tz tmf -> tmf tz) <$> value bZip) <@> treeMods
         ctrlSet  = buildControlSet clicks eRelease eKeys motions $
-                     jaekControlGraph evtSrcs bSz dFocus bView bZip drags
+                     jaekControlGraph evtSrcs bSz dFocus bView bZip
         treeMods = zipChangeSet ctrlSet
 
     reactimate $ (drawOnExpose mainArea drawRef <$> bDraw <*>

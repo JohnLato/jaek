@@ -19,12 +19,12 @@ import Reactive.Banana  as FRP
 import Diagrams.Prelude as D
 import Data.Foldable (toList)
 import Data.Label as L
-import qualified Data.Tuple.Update as T
 import qualified Data.IntMap as M
 import qualified Data.SplayTree.RangeSet as R
 
 import Control.Arrow
-import Control.Monad.Identity
+
+type RMap = M.IntMap (R.RangeSet Double)
 
 
 -- The current selection is a Discrete [DragEvent].  There are two components,
@@ -44,23 +44,22 @@ selectCtrl
   :: Discrete (Int,Int)
   -> Discrete Focus
   -> Discrete TreeZip
-  -> Event DragEvent
   -> Event ClickEvent    -- ^ clicks
   -> Event ClickEvent    -- ^ releases
   -> Event KeyVal
   -> Event MotionEvent
   -> Controller [DragEvent]
-selectCtrl bSize bFocus bZip drags clicks releases keys motions =
+selectCtrl bSize bFocus bZip clicks releases keys motions =
   nullController { dActive     = isActive
-                  ,dState      = dClean
+                  ,dState      = dSel
                   ,clickPass   = clicks   -- for now, pass all clicks
                   ,releasePass = releases
-                  ,keysPass    = passFilter keys isActive keypass
+                  ,keysPass    = passFilter keys isActive pass2
                   ,motionsPass = motions
-                  ,bDiagChange = compositeSelection <$> value dClean
-                  ,redrawTrig  = () <$ changes dSel }
+                  ,bDiagChange = value $ compositeSelection <$> dSel <*> chanCurDrag
+                  ,redrawTrig  = (() <$ changes dSel')
+                                 <> (() <$ changes chanCurDrag) }
  where
-  dClean       = dNoDup <*> dSel
   isActive     = isWave <$> bFocus
   filterActive = filterApply (const <$> value isActive)
   filtOnPos :: HasXY a => Event a -> Event a
@@ -72,66 +71,45 @@ selectCtrl bSize bFocus bZip drags clicks releases keys motions =
                                        (P $ L.get xyEnd drg))
                           $ P $ L.get getXY drag) sels) )
                  <$> dSel
+  dAddDrg :: Discrete (Maybe DragEvent -> RMap -> RMap)
+  dAddDrg = (\w z mDE rm -> maybe rm (M.unionWith R.append rm
+                                  . rngToMap
+                                  . dragToRange w z) mDE)
+                    <$> bSize <*> bZip
+  dSel' :: Discrete RMap
+  -- on eAdd, add the current drag to the map
+  -- add the current drag if it's the only one.
+  -- on escape, clear the current drag.  if it's Nothing, clear the full selection
+  dSel' = accumD M.empty $ 
+            (dAddDrg <@> (sampleD curDrag $ eAdd <> (() <$ addSingle)))
+            <> clearSel
+  unMap = rangesToDrags <$> bSize <*> bZip
   dSel :: Discrete [DragEvent]
-  dSel         = combiner
-                 <$> accumD (Nothing, []) (eDrags <> eCurDrag <> breaks)
-  -- the current selection is made of two components:
-  -- 1.  The current drag region, if it's additive (e.g. shift-drag)
-  -- 2.  Everything which is already selected
-  combiner (Nothing, rest)   = rest
-  combiner (Just this, rest)
-    | dragIsAdditive this    = this:rest
-    | otherwise              = [this]
-  -- need to create Event ((Maybe DE, [DE]) -> (Maybe DE, [DE]) )
-  curDrag  = genDDrag (filtOnPos . filterActive $ clicks <> releases)
-                      (filterActive motions)
-  eCurDrag = T.upd1 <$> (dChannelize <@> changes curDrag)
-  eDrags   = (\(Identity drag) ->
-                  if dragIsAdditive drag
-                    then second (drag: )
-                    else second (const [drag]))
-             <$> (dChannelize <@> (Identity <$> filtOnPos (filterActive drags)))
-  dChannelize :: (Functor f) => Discrete (f DragEvent -> f DragEvent)
-  dChannelize = (\w f z s -> fmap (channelizeDrag w f z) s)
-                  <$> bSize <*> bFocus <*> bZip
-  dNoDup      = (\w z -> rangesToDrags w z . rngToMap
-                         . concatMap (dragToRange w z))
-                  <$> bSize <*> bZip
+  dSel = unMap <*> dSel'
+  chanCurDrag = unMap <*> (dAddDrg <*> curDrag <*> pure M.empty)
+  curDrag :: Discrete (Maybe DragEvent)
+  curDrag  = let cur' = genDDrag (filtOnPos . filterActive $ clicks <> releases)
+                          (filterActive motions)
+             in stepperD (initial cur')
+                         ((Nothing <$ eAdd)
+                          <> changes cur'
+                          <> (Nothing <$ breaks)
+                          <> (Nothing <$ addSingle) )
+  clearSel = maybe (const M.empty) (const id) <$> sampleD curDrag breaks
+  addSingle = filterApply (value (const . null <$> dSel)) releases
   (keypass, breaks) = splitEithers (breakKeyF <$> dSel <@> keys)
-  --breakKeyF :: KeyVal -> Either KeyVal ((Maybe DE, [DE]) ->  (Maybe DE, [DE]))
   breakKeyF [] keyval = Left keyval
   breakKeyF _ keyval
-    | keyval == 65307 = Right (const (Nothing, []))
+    | keyval == 65307 = Right ()
     | otherwise       = Left keyval
-
--- | check if a drag event should be added to current selection (shift-drag)
--- or replace it.
-dragIsAdditive :: DragEvent -> Bool
-dragIsAdditive = clickIsAdditive . L.get dragStart
-
-clickIsAdditive :: ClickEvent -> Bool
-clickIsAdditive = any (== ShiftE) . L.get clickMods
-
--- | The (X,Y) coordinates of a DragEvent need to be adjusted to match
--- the channels in a WaveView.
-channelizeDrag :: (Int, Int) -> Focus -> TreeZip -> DragEvent -> DragEvent
-channelizeDrag (_, ySz) focus zp drg
-  | isTree focus = drg
-  | nc <= 1      = drg
-  | otherwise = modify dragYs ((inf *** inf) >>> adjf >>> (outf *** outf)) drg
- where
-  nc = liftT numChans $ hole zp
-  adjf (s,e) = if e >= s then (floor s, ceiling e) else (ceiling s, floor e)
-  ySz' = fI ySz :: Double
-  nc'  = fI nc :: Double
-  inf y = nc' * (y / ySz')
-  outf :: Int -> Double
-  outf y = ySz' * (fI y / nc')
+  (pass2, eAdd) = splitEithers (addKey <$> keypass)
+  addKey 97 = Right ()
+  addKey x  = Left x
 
 rangesToDrags
   :: (Int,Int)
   -> TreeZip
-  -> M.IntMap (R.RangeSet Double)
+  -> RMap
   -> [DragEvent]
 rangesToDrags w z = concatMap (rangeToDrags w z) . M.toList
 
@@ -160,7 +138,7 @@ dragToRange  (_, ySz) zp = getChns
   nc'  = fI nc :: Double
   inf y = nc' * (y / ySz')
 
-rngToMap :: [(Int, R.Range Double)] -> M.IntMap (R.RangeSet Double)
+rngToMap :: [(Int, R.Range Double)] -> RMap
 rngToMap = M.fromListWith (R.append) . ((map . fmap) R.singleton)
 
 -- | usually I use @(Int,SampleCount, SampleCount)@ for the region type,
