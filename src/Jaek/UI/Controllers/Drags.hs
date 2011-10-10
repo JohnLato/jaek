@@ -41,7 +41,7 @@ type RMap = M.IntMap (R.RangeSet Double)
 -- 
 -- This controller is only active when a Wave is in focus.
 selectCtrl
-  :: Discrete (Int,Int)
+  :: Discrete (Int,Int)  -- ^ viewport size
   -> Discrete Focus
   -> Discrete TreeZip
   -> Event ClickEvent    -- ^ clicks
@@ -49,7 +49,7 @@ selectCtrl
   -> Event KeyVal
   -> Event MotionEvent
   -> Controller [DragEvent]
-selectCtrl bSize bFocus bZip clicks releases keys motions =
+selectCtrl dSize dFocus dZip clicks releases keys motions =
   nullController { dActive     = isActive
                   ,dState      = dSel
                   ,clickPass   = clicks   -- for now, pass all clicks
@@ -60,7 +60,7 @@ selectCtrl bSize bFocus bZip clicks releases keys motions =
                   ,redrawTrig  = (() <$ changes dSel')
                                  <> (() <$ changes chanCurDrag) }
  where
-  isActive     = isWave <$> bFocus
+  isActive     = isWave <$> dFocus
   filterActive = filterApply (const <$> value isActive)
   filtOnPos :: HasXY a => Event a -> Event a
   filtOnPos    = filterApply (value inSel)
@@ -75,7 +75,7 @@ selectCtrl bSize bFocus bZip clicks releases keys motions =
   dAddDrg = (\w z mDE rm -> maybe rm (M.unionWith R.append rm
                                   . rngToMap
                                   . dragToRange w z) mDE)
-                    <$> bSize <*> bZip
+                    <$> dSize <*> dZip
   dSel' :: Discrete RMap
   -- on eAdd, add the current drag to the map
   -- add the current drag if it's the only one.
@@ -83,7 +83,7 @@ selectCtrl bSize bFocus bZip clicks releases keys motions =
   dSel' = accumD M.empty $ 
             (dAddDrg <@> (sampleD curDrag $ eAdd <> (() <$ addSingle)))
             <> clearSel
-  unMap = rangesToDrags <$> bSize <*> bZip
+  unMap = rangesToDrags <$> dSize <*> dZip
   dSel :: Discrete [DragEvent]
   dSel = unMap <*> dSel'
   chanCurDrag = unMap <*> (dAddDrg <*> curDrag <*> pure M.empty)
