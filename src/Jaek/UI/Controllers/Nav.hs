@@ -53,10 +53,10 @@ allNav ::
   -> Event ClickEvent
   -> Event KeyVal
   -> Event MotionEvent
-  -> Controller ()
+  -> Controller View
 allNav sources dFocus dZip dVmap clicks releases keys motions =
   nullController { dActive     = isActive
-                  ,dState      = pure ()
+                  ,dState      = dView
                   ,clickPass   = clicks
                   ,releasePass = releases
                   ,keysPass    = passkeys <> pass2
