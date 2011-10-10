@@ -42,14 +42,14 @@ type RMap = M.IntMap (R.RangeSet Double)
 -- This controller is only active when a Wave is in focus.
 selectCtrl
   :: Discrete (Int,Int)  -- ^ viewport size
-  -> Discrete Focus
+  -> Discrete View
   -> Discrete TreeZip
   -> Event ClickEvent    -- ^ clicks
   -> Event ClickEvent    -- ^ releases
   -> Event KeyVal
   -> Event MotionEvent
   -> Controller [DragEvent]
-selectCtrl dSize dFocus dZip clicks releases keys motions =
+selectCtrl dSize dView dZip clicks releases keys motions =
   nullController { dActive     = isActive
                   ,dState      = dSel
                   ,clickPass   = clicks   -- for now, pass all clicks
@@ -60,7 +60,7 @@ selectCtrl dSize dFocus dZip clicks releases keys motions =
                   ,redrawTrig  = (() <$ changes dSel')
                                  <> (() <$ changes chanCurDrag) }
  where
-  isActive     = isWave <$> dFocus
+  isActive     = isWaveView <$> dView
   filterActive = filterApply (const <$> value isActive)
   filtOnPos :: HasXY a => Event a -> Event a
   filtOnPos    = filterApply (value inSel)

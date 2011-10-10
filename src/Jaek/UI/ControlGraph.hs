@@ -19,10 +19,11 @@ jaekControlGraph
   -> Discrete ViewMap
   -> Discrete TreeZip
   -> ControlGraph ()
-jaekControlGraph sources dSize dFocus dView dZip = do
-  baseNav      <- buildController (allNav sources dFocus dZip dView)
-  wvSelectCtrl <- buildController (selectCtrl dSize dFocus dZip)
-  addController $ bindController (editCtrl1  dSize dView wvSelectCtrl sources)
+jaekControlGraph sources dSize dFocus dViewMap dZip = do
+  baseNav      <- buildController (allNav sources dFocus dZip dViewMap)
+  let dView = dState baseNav
+  wvSelectCtrl <- buildController (selectCtrl dSize dView dZip)
+  addController $ bindController (editCtrl1 dSize dViewMap wvSelectCtrl sources)
                                  wvSelectCtrl
   buildController (waveNav dFocus dZip)
 
