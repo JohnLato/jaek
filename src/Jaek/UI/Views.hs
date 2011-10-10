@@ -15,6 +15,8 @@ module Jaek.UI.Views (
   ,slideX
   ,slideY
   ,zoom
+  ,px2sampleCount
+  ,sampleCount2px
 )
 
 where
@@ -113,3 +115,15 @@ zoom' zf p0 d0 =
   let d1 = zf *^ d0
       p1 = p0 ^+^ (0.5 * (1-zf)) *^ d0
   in (p1,d1)
+
+px2sampleCount :: (Int, Int) -> View -> Double -> SampleCount
+px2sampleCount (winX, _winY) (WaveView off dur) x =
+  off + round (fI dur * (x / fI winX))
+px2sampleCount (winX, _winY) (FullView xs ys xOff yOff) x =
+  round $ xOff + (xs-xOff) * (x / fI winX)
+
+sampleCount2px :: (Int, Int) -> View -> SampleCount -> Double
+sampleCount2px (winX, _winY) (WaveView off dur) x =
+  fI winX * (fI (x - off) / fI dur)
+sampleCount2px (winX, _winY) (FullView xs ys xOff yOff) x =
+  fI winX * ((fI x - xOff) / (xs-xOff))

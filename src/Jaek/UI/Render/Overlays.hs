@@ -19,8 +19,9 @@ compositeSelection ::
   -> AnnDiagram b R2 m
   -> AnnDiagram b R2 m
 compositeSelection drags curs d =
-  (drawSelection mediumpurple curs)
-  `atop` drawSelection royalblue drags `atop` d
+  drawSelection mediumpurple curs
+  `atop` drawSelection royalblue drags
+  `atop` d
 
 -- | overlay for selected regions
 drawSelection ::

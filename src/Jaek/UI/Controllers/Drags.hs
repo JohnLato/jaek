@@ -21,11 +21,16 @@ import Data.Foldable (toList)
 import Data.Label as L
 import qualified Data.IntMap as M
 import qualified Data.SplayTree.RangeSet as R
+import           Data.SplayTree (fmap')
 
 import Control.Arrow
 
 type RMap = M.IntMap (R.RangeSet Double)
 
+-- | apply the monotonic function to all ranges in an RMap
+mapRangesMono :: (Double -> Double) -> RMap -> RMap
+mapRangesMono f =
+  M.map (fmap' (uncurry R.rangePs <<< (f . R.rMin &&& f . R.rangeMax)))
 
 -- The current selection is a Discrete [DragEvent].  There are two components,
 -- the current drag event, and any prior selected regions (if the current event
@@ -56,7 +61,8 @@ selectCtrl dSize dView dZip clicks releases keys motions =
                   ,releasePass = releases
                   ,keysPass    = passFilter keys isActive pass2
                   ,motionsPass = motions
-                  ,bDiagChange = value $ compositeSelection <$> dSel <*> chanCurDrag
+                  ,bDiagChange = value $ compositeSelection
+                                 <$> dSel <*> chanCurDrag
                   ,redrawTrig  = (() <$ changes dSel')
                                  <> (() <$ changes chanCurDrag) }
  where
@@ -71,6 +77,11 @@ selectCtrl dSize dView dZip clicks releases keys motions =
                                        (P $ L.get xyEnd drg))
                           $ P $ L.get getXY drag) sels) )
                  <$> dSel
+  updateFromView :: Event (RMap -> RMap)
+  updateFromView = (mapRangesMono <$>) . fst . mapAccum round $
+      ((\sz vw lastfn ->
+          (sampleCount2px sz vw . lastfn, px2sampleCount sz vw))
+       <$> dSize) <@> changes dView
   dAddDrg :: Discrete (Maybe DragEvent -> RMap -> RMap)
   dAddDrg = (\w z mDE rm -> maybe rm (M.unionWith R.append rm
                                   . rngToMap
@@ -79,10 +90,12 @@ selectCtrl dSize dView dZip clicks releases keys motions =
   dSel' :: Discrete RMap
   -- on eAdd, add the current drag to the map
   -- add the current drag if it's the only one.
-  -- on escape, clear the current drag.  if it's Nothing, clear the full selection
+  -- on escape, clear the current drag.
+  --   if it's Nothing, clear the full selection
   dSel' = accumD M.empty $ 
-            (dAddDrg <@> (sampleD curDrag $ eAdd <> (() <$ addSingle)))
+            (dAddDrg <@> sampleD curDrag (eAdd <> (() <$ addSingle)))
             <> clearSel
+            <> updateFromView
   unMap = rangesToDrags <$> dSize <*> dZip
   dSel :: Discrete [DragEvent]
   dSel = unMap <*> dSel'
@@ -139,7 +152,7 @@ dragToRange  (_, ySz) zp = getChns
   inf y = nc' * (y / ySz')
 
 rngToMap :: [(Int, R.Range Double)] -> RMap
-rngToMap = M.fromListWith (R.append) . ((map . fmap) R.singleton)
+rngToMap = M.fromListWith R.append . (map . fmap) R.singleton
 
 -- | usually I use @(Int,SampleCount, SampleCount)@ for the region type,
 -- but here it's nested tuples to facilitate further processing
@@ -162,5 +175,3 @@ dragToRegions (xSz, ySz) zp vm drg =
   (xStart,xEnd) = (x2sc . uncurry min &&& x2sc . uncurry max) $ L.get dragXs drg
   x2sc x = off + floor (fI dur * (x / fI xSz))
   chnBorder y = round $ fI nc * (y / fI ySz) :: Int
-
-
