@@ -16,6 +16,7 @@ module Jaek.Tree (
  ,NodeRef (..)
  ,HTree
  ,TreeZip
+ ,ClipRef
  ,iZip
  ,newSource
  ,goToHead
@@ -49,6 +50,8 @@ import           Data.Data
 import           Data.Maybe
 import           Data.Tree
 
+-- | Reference to a section of audio
+type ClipRef = (Int, SampleCount, SampleCount)
 
 -- This is not the same as the Data.Tree.Node constructor.  Instead, it's the
 -- label which is used inside a Tree (the payload at the Node).
@@ -213,12 +216,12 @@ mod2 nm chns gen zp =
 -- | Perform a cut in the current node in the specified channels.
 -- The new child is in focus after this operation.
 -- If no valid channels are specified, the zipper is unchanged.
-mkCut :: [(Int, SampleCount, SampleCount)] -> TreeZip -> TreeZip
+mkCut :: [ClipRef] -> TreeZip -> TreeZip
 mkCut sels = mod1 "mkCut" (map sel1 sels) $ \cn ->
   map (\(_,off,dur) -> Cut cn off dur) $ filter (\i -> sel1 i == cn) sels
 
 -- | Mute the current node in the specific locations
-mkMute :: [(Int, SampleCount, SampleCount)] -> TreeZip -> TreeZip
+mkMute :: [ClipRef] -> TreeZip -> TreeZip
 mkMute sels = mod1 "mkMute" (map sel1 sels) $ \cn ->
   map (\(_,off,dur) -> Mute cn off dur) $ filter (\i -> sel1 i == cn) sels
 
