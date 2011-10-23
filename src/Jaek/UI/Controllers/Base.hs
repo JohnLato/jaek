@@ -44,7 +44,7 @@ import           Jaek.UI.FrpTypes
 import           Jaek.UI.Focus
 import           Jaek.UI.Views
 
-import           Diagrams.Prelude
+import           Diagrams.Prelude hiding (value)
 import           Diagrams.Backend.Cairo
 import           Reactive.Banana
 

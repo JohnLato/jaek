@@ -82,23 +82,25 @@ createMainWindow iProject iTree = do
     bSz         <- genDSize mainArea
     eRelease    <- releaseEvents mainArea
     motions     <- motionEvents mainArea
-    let bFocus  = value dFocus
+    let bFocus  = FRP.value dFocus
         eFocus  = changes dFocus
         bFName = stepper iProject (fst <$> (eNewDoc <> eOpenDoc))
         (bRoot, _bProjName) = (takeDirectory <$> bFName,
                                takeFileName  <$> bFName)
         (bZip, bView) = genBZip iTree (eNewDoc <> eOpenDoc) eNewSource
                           treeMods (viewChangeSet ctrlSet) eFocus
-        bDraw  = genBDraw mpRef bRoot (value bZip) bFocus (value bSz) (value bView)
+        bDraw  = genBDraw mpRef bRoot (FRP.value bZip) bFocus
+                          (FRP.value bSz) (FRP.value bView)
         dFocus = genDFocus bDraw clicks
                            (eFocChangeSet ctrlSet)
-                           $ ((\tz tmf -> tmf tz) <$> value bZip) <@> treeMods
+                           $ ((\tz tmf -> tmf tz) <$> FRP.value bZip)
+                             <@> treeMods
         ctrlSet  = buildControlSet clicks eRelease eKeys motions $
                      jaekControlGraph evtSrcs bSz dFocus bView bZip
         treeMods = zipChangeSet ctrlSet
 
     reactimate $ (drawOnExpose mainArea drawRef <$> bDraw <*>
-                    value bView <*> bFocus <*> diagChangeSet ctrlSet)
+                    FRP.value bView <*> bFocus <*> diagChangeSet ctrlSet)
                  <@> eMainExpose
 
     -- add in any effects from the ControlSet
@@ -113,7 +115,8 @@ createMainWindow iProject iTree = do
               <> ( redrawF <$ redrawSet ctrlSet)
 
     -- save the document when requested
-    reactimate $ apply ((\fp tz () -> writeProject fp tz) <$> bFName <*> value bZip)
+    reactimate $ apply ((\fp tz () -> writeProject fp tz)
+                          <$> bFName <*> FRP.value bZip)
                        eSaveDoc
 
   FRP.actuate network

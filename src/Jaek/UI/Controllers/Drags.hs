@@ -61,15 +61,15 @@ selectCtrl dSize dView dZip clicks releases keys motions =
                   ,releasePass = releases
                   ,keysPass    = passFilter keys isActive pass2
                   ,motionsPass = motions
-                  ,bDiagChange = value $ compositeSelection
+                  ,bDiagChange = FRP.value $ compositeSelection
                                  <$> dSel <*> chanCurDrag
                   ,redrawTrig  = (() <$ changes dSel')
                                  <> (() <$ changes chanCurDrag) }
  where
   isActive     = isWaveView <$> dView
-  filterActive = filterApply (const <$> value isActive)
+  filterActive = filterApply (const <$> FRP.value isActive)
   filtOnPos :: HasXY a => Event a -> Event a
-  filtOnPos    = filterApply (value inSel)
+  filtOnPos    = filterApply (FRP.value inSel)
   inSel     :: HasXY a => Discrete (a -> Bool)
   inSel        = (\sels drag ->
                         not (any (\drg -> contains'
@@ -109,7 +109,7 @@ selectCtrl dSize dView dZip clicks releases keys motions =
                           <> (Nothing <$ breaks)
                           <> (Nothing <$ addSingle) )
   clearSel = maybe (const M.empty) (const id) <$> sampleD curDrag breaks
-  addSingle = filterApply (value (const . null <$> dSel)) releases
+  addSingle = filterApply (FRP.value (const . null <$> dSel)) releases
   (keypass, breaks) = splitEithers (breakKeyF <$> dSel <@> keys)
   breakKeyF [] keyval = Left keyval
   breakKeyF _ keyval

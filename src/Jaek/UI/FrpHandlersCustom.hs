@@ -66,7 +66,7 @@ genDFocus :: Behavior (AnnDiagram Cairo R2 (First TreePath))
 genDFocus bDraw clicks eFocChange eTreeChange = dfoc
  where
   dfoc   = stepperD Nothing eFilt
-  beh    = value dfoc
+  beh    = FRP.value dfoc
   eFilt  = filterApply ((/=) <$> beh) eFocus
   eFocus = (Just . getPath <$> eTreeChange)
            <> filterE isJust (
