@@ -23,6 +23,8 @@ jaekControlGraph sources dSize dFocus dViewMap dZip = do
   baseNav      <- buildController (allNav sources dFocus dZip dViewMap)
   let dView = dState baseNav
   wvSelectCtrl <- buildController (selectCtrl dSize dView dZip)
+  clipCtrl     <- buildController
+                    (clipboardCtrl dSize dViewMap dZip wvSelectCtrl sources)
   addController $ bindController (editCtrl1 dSize dViewMap wvSelectCtrl sources)
                                  wvSelectCtrl
   buildController (waveNav dFocus dZip)

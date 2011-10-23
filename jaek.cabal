@@ -72,6 +72,7 @@ Executable jaek
                       ,Jaek.UI.AllSources
                       ,Jaek.UI.ControlGraph
                       ,Jaek.UI.Controllers.Base
+                      ,Jaek.UI.Controllers.Clipboard
                       ,Jaek.UI.Controllers.Drags
                       ,Jaek.UI.Controllers.Edit1
                       ,Jaek.UI.Controllers.EditModes

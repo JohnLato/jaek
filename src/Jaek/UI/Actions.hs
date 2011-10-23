@@ -10,6 +10,7 @@ module Jaek.UI.Actions (
  ,renderAction
  ,zoomInAction
  ,zoomOutAction
+ ,copyAction
  ,deleteAction
  ,muteAction
 )
@@ -77,3 +78,6 @@ deleteAction = actionNew "DeleteAction" "Delete" Nothing Nothing
 
 muteAction :: IO Action
 muteAction = actionNew "MuteAction" "Mute" Nothing Nothing
+
+copyAction :: IO Action
+copyAction = actionNew "CopyAction" "Copy" Nothing Nothing

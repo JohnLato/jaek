@@ -9,6 +9,7 @@ module Jaek.UI.MenuActionHandlers (
  ,importHandler
  ,zoomInHandler
  ,zoomOutHandler
+ ,copyHandler
  ,deleteHandler
  ,muteHandler
  ,module Jaek.UI.FrpHandlers
@@ -129,6 +130,9 @@ zoomOutHandler a w =
 -- -----------------------------------------
 -- edit event sources
 
+-- | copy action
+copyHandler :: ActionGroup -> Window -> NetworkDescription (Event ())
+copyHandler = defaultMkAction copyAction $ Just "C"
 
 -- | delete action
 deleteHandler :: ActionGroup -> Window -> NetworkDescription (Event ())

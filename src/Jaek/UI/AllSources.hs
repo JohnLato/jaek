@@ -22,6 +22,7 @@ data Sources = Sources {
  ,getZoomOutSource :: Event Zoom
  ,getDeleteSource  :: Event ()
  ,getMuteSource    :: Event ()
+ ,getCopySource    :: Event ()
  }
 
 makeSources :: ActionGroup -> Window -> NetworkDescription Sources
@@ -35,3 +36,4 @@ makeSources actGrp win =
   <*> zoomOutHandler actGrp win
   <*> deleteHandler  actGrp win
   <*> muteHandler    actGrp win
+  <*> copyHandler     actGrp win
