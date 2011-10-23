@@ -32,7 +32,7 @@ clipboardCtrl ::
   -> Event ClickEvent
   -> Event KeyVal
   -> Event MotionEvent
-  -> Controller [[(NodeRef, ClipRef)]]
+  -> Controller [(NodeRef, [ClipRef])]
 clipboardCtrl bSz bVm dTz selCtrl sources clicks releases keys motions =
   nullController { dActive     = isActive
                   ,dState      = accumD [] addToClip
@@ -62,13 +62,13 @@ keyactOnSelect ::
   -> ViewMap
   -> [DragEvent]
   -> KeyVal
-  -> Either KeyVal ([[(NodeRef, ClipRef)]] -> [[(NodeRef, ClipRef)]])
+  -> Either KeyVal ([(NodeRef, [ClipRef])] -> [(NodeRef, [ClipRef])])
 keyactOnSelect tz sz vm sels key
   | sels == []                = Left key
   | keyToChar key == Just 'c' = Right (clip : )
   | keyToChar key == Just 'd' = Right (clip : )
   | otherwise                 = Left key
- where clip = map (AbsPath $ getPath tz, ) $ mkRegions sz tz vm sels
+ where clip = (AbsPath $ getPath tz, mkRegions sz tz vm sels)
   
 -- this slightly convoluted function removes overlapping segments
 -- in each channel.

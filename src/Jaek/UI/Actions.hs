@@ -12,6 +12,7 @@ module Jaek.UI.Actions (
  ,zoomOutAction
  ,copyAction
  ,deleteAction
+ ,insertAction
  ,muteAction
 )
 
@@ -73,11 +74,14 @@ zoomOutAction = actionNew "ZoomOutAction" "ZoomOut" Nothing Nothing
 -- -------------------------------------------
 -- editing actions
 
+copyAction :: IO Action
+copyAction = actionNew "CopyAction" "Copy" Nothing Nothing
+
 deleteAction :: IO Action
-deleteAction = actionNew "DeleteAction" "Delete" Nothing Nothing
+deleteAction = actionNew "InsertAction" "Delete" Nothing Nothing
+
+insertAction :: IO Action
+insertAction = actionNew "DeleteAction" "Delete" Nothing Nothing
 
 muteAction :: IO Action
 muteAction = actionNew "MuteAction" "Mute" Nothing Nothing
-
-copyAction :: IO Action
-copyAction = actionNew "CopyAction" "Copy" Nothing Nothing

@@ -82,6 +82,7 @@ Executable jaek
                       ,Jaek.UI.FrpHandlers
                       ,Jaek.UI.FrpHandlersCustom
                       ,Jaek.UI.FrpTypes
+                      ,Jaek.UI.Logic.SelectionMediators
                       ,Jaek.UI.MenuActionHandlers
                       ,Jaek.UI.Render
                       ,Jaek.UI.Render.Overlays

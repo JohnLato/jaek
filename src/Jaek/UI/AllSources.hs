@@ -20,9 +20,10 @@ data Sources = Sources {
  ,getImportSource  :: Event (String, [StreamExpr])
  ,getZoomInSource  :: Event Zoom
  ,getZoomOutSource :: Event Zoom
- ,getDeleteSource  :: Event ()
- ,getMuteSource    :: Event ()
  ,getCopySource    :: Event ()
+ ,getDeleteSource  :: Event ()
+ ,getInsertSource  :: Event ()
+ ,getMuteSource    :: Event ()
  }
 
 makeSources :: ActionGroup -> Window -> NetworkDescription Sources
@@ -35,5 +36,6 @@ makeSources actGrp win =
   <*> zoomInHandler  actGrp win
   <*> zoomOutHandler actGrp win
   <*> deleteHandler  actGrp win
+  <*> insertHandler  actGrp win
   <*> muteHandler    actGrp win
   <*> copyHandler     actGrp win

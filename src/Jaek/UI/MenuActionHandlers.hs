@@ -11,6 +11,7 @@ module Jaek.UI.MenuActionHandlers (
  ,zoomOutHandler
  ,copyHandler
  ,deleteHandler
+ ,insertHandler
  ,muteHandler
  ,module Jaek.UI.FrpHandlers
 )
@@ -137,6 +138,10 @@ copyHandler = defaultMkAction copyAction $ Just "C"
 -- | delete action
 deleteHandler :: ActionGroup -> Window -> NetworkDescription (Event ())
 deleteHandler = defaultMkAction deleteAction $ Just "D"
+
+-- | insert action
+insertHandler :: ActionGroup -> Window -> NetworkDescription (Event ())
+insertHandler = defaultMkAction insertAction $ Just "I"
 
 -- | mute action
 muteHandler :: ActionGroup -> Window -> NetworkDescription (Event ())
