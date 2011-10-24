@@ -10,7 +10,6 @@ where
 import Jaek.Base
 import Jaek.Tree
 import Jaek.UI.Controllers.Base
-import Jaek.UI.Focus
 import Jaek.UI.FrpHandlers
 import Jaek.UI.Render.Overlays
 import Jaek.UI.Views
@@ -143,7 +142,7 @@ dragToRange
 dragToRange  (_, ySz) zp = getChns
  where
   nc = liftT numChans $ hole zp
-  adjf (s,e) = if e >= s then (floor s, ceiling e) else (floor e, ceiling s)
+  adjf (s,end) = if end >= s then (floor s, ceiling end) else (floor end, ceiling s)
   mkChn drg (mn,mx) = let (xmn,xmx) = get dragXs drg
                       in [ (i, R.rangePs xmn xmx) | i <- [mn .. mx-1]]
   getChns drg = (get dragYs >>> (inf *** inf) >>> adjf >>> mkChn drg) drg

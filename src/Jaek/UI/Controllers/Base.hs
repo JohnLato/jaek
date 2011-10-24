@@ -57,8 +57,8 @@ import qualified Control.Monad.State as St
 --   --         nonActive src  ||| active src
 -- 
 passFilter :: Event a -> Discrete Bool -> Event a -> Event a
-passFilter full d e =
-  filterApply    (const       <$> value d) e
+passFilter full d chk =
+  filterApply    (const       <$> value d) chk
   <> filterApply (const . not <$> value d) full
 
 -- | A controller reacts to inputs and produces some sort of output.

@@ -119,11 +119,11 @@ zoom' zf p0 d0 =
 px2sampleCount :: (Int, Int) -> View -> Double -> SampleCount
 px2sampleCount (winX, _winY) (WaveView off dur) x =
   off + round (fI dur * (x / fI winX))
-px2sampleCount (winX, _winY) (FullView xs ys xOff yOff) x =
+px2sampleCount (winX, _winY) (FullView xs _ xOff _) x =
   round $ xOff + (xs-xOff) * (x / fI winX)
 
 sampleCount2px :: (Int, Int) -> View -> SampleCount -> Double
 sampleCount2px (winX, _winY) (WaveView off dur) x =
   fI winX * (fI (x - off) / fI dur)
-sampleCount2px (winX, _winY) (FullView xs ys xOff yOff) x =
+sampleCount2px (winX, _winY) (FullView xs _ xOff _) x =
   fI winX * ((fI x - xOff) / (xs-xOff))
