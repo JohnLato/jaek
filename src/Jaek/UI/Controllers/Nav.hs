@@ -59,7 +59,7 @@ allNav sources dFocus dZip dVmap clicks releases keys motions =
                   ,dState      = dView
                   ,clickPass   = clicks
                   ,releasePass = releases
-                  ,keysPass    = passkeys <> pass2
+                  ,keysPass    = pass2
                   ,motionsPass = motions
                   ,eViewChange = vmapChange <> zoomChange
                   ,redrawTrig  = (() <$ vmapChange) <> (() <$ zooms) }
@@ -67,8 +67,8 @@ allNav sources dFocus dZip dVmap clicks releases keys motions =
   isActive = pure True
   dView = (\vm z foc -> getView vm . hole $ goToFocus z foc)
           <$> dVmap <*> dZip <*> dFocus
-  (passkeys, vmapChange) = splitEithers $ (treeKey <$> dView <*> dZip) <@> keys
-  (pass2, zooms')        = splitEithers $ zoomKey <$> keys
+  (pass1, vmapChange) = splitEithers $ (treeKey <$> dView <*> dZip) <@> keys
+  (pass2, zooms')        = splitEithers $ zoomKey <$> pass1
   zooms                  = zooms'
                            <> getZoomInSource sources
                            <> getZoomOutSource sources
