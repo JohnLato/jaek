@@ -1,7 +1,10 @@
-{-# LANGUAGE DeriveDataTypeable, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TypeFamilies
+            ,DeriveDataTypeable
+            ,GeneralizedNewtypeDeriving #-}
 
 module Jaek.Base (
   SampleCount (..)
+ ,Duration (..)
  ,ChanNum
  ,TreePath
  ,NodeRef (..)
@@ -15,6 +18,8 @@ module Jaek.Base (
 
 where
 
+import Data.AdditiveGroup
+import Data.AffineSpace
 import Data.Data
 import qualified Data.Hashable as H
 import qualified Data.Digest.Murmur as MH
@@ -34,6 +39,21 @@ newtype SampleCount = SC Int
 newtype Duration = D Int
  deriving (Eq, Show, Ord, Num, Integral, Enum, Real, Data, Typeable
           ,H.Hashable, MH.Hashable)
+
+instance AdditiveGroup SampleCount where
+  zeroV = 0
+  (^+^) = (+)
+  negateV = negate
+
+instance AdditiveGroup Duration where
+  zeroV = 0
+  (^+^) = (+)
+  negateV = negate
+
+instance AffineSpace SampleCount where
+  type Diff SampleCount = Duration
+  (SC end) .-. (SC start) = D (end-start)
+  (SC off) .+^ (D dur)    = SC (off+dur)
 
 type ChanNum = Int
 
