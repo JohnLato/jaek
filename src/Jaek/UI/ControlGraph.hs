@@ -13,6 +13,7 @@ import Jaek.UI.Focus
 import Jaek.UI.Views
 
 import Reactive.Banana
+import Control.Monad (when)
 
 jaekControlGraph
   :: Sources
@@ -27,13 +28,16 @@ jaekControlGraph sources dSize dFocus dViewMap dZip = do
   wvSelectCtrl <- buildController (selectCtrl dSize dView dZip)
   clipCtrl     <- buildController
                     (clipboardCtrl dSize dViewMap dZip wvSelectCtrl sources)
-  addController $ bindController (editCtrl1 dSize dViewMap clipCtrl
+  let editCtrl = bindController (editCtrl1 dSize dViewMap clipCtrl
                                     wvSelectCtrl sources)
-                                 wvSelectCtrl
-#if DEBUG
-  watch "waveSelection" wvSelectCtrl (changes . dState)
-  watch "clipboard" clipCtrl (changes . dState)
-#endif
+                                wvSelectCtrl
+  addController editCtrl
+
+  when DEBUG $ do
+    watch "waveSelection" wvSelectCtrl (changes . dState)
+    watch "clipboard" clipCtrl (changes . dState)
+    watch "commands" editCtrl
+      ( fmap (liftZ getTransforms) . applyD (flip ($) <$> dZip) . eZipChange )
 
   buildController (waveNav dFocus dZip)
 

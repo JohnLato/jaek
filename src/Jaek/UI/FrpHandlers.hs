@@ -1,4 +1,5 @@
-{-# LANGUAGE TypeOperators
+{-# LANGUAGE CPP
+            ,TypeOperators
             ,TypeSynonymInstances
             ,FlexibleInstances #-}
 
@@ -136,7 +137,7 @@ keypressEvents :: WidgetClass w => w -> NetworkDescription (Event KeyVal)
 keypressEvents widget = event1 $ \k ->
   ignore $ on widget keyPressEvent $ tryEvent $ do
     kv <- eventKeyVal
-    liftIO $ print $ "got KeyVal: " ++ show kv
+    when DEBUG $ liftIO $ print $ "got KeyVal: " ++ show kv
     liftIO $ k kv
 
 clickEvents :: WidgetClass w => w -> NetworkDescription (Event ClickEvent)

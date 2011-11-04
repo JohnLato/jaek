@@ -20,7 +20,9 @@ Executable jaek
   ghc-options:         -Wall -fno-warn-unused-do-bind -fno-warn-orphans
                        -rtsopts -threaded -O2 -with-rtsopts=-N
   if flag(debug)
-    cpp-options:       -DDEBUG
+    cpp-options:       -DDEBUG=True
+  else
+    cpp-options:       -DDEBUG=False
   Build-depends:       base           >= 3       && < 5
                       ,attoparsec     >= 0.8.0   && < 0.10
                       ,blaze-builder  >= 0.3.0   && < 0.4

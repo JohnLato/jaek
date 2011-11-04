@@ -1,4 +1,5 @@
-{-# LANGUAGE MultiParamTypeClasses
+{-# LANGUAGE CPP
+            ,MultiParamTypeClasses
             ,TypeFamilies
             ,FlexibleContexts
             ,TupleSections #-}
@@ -104,9 +105,11 @@ createReadPeaksForNode root mpRef tzip =
   let htree = hole tzip
       exprs = getExprs htree
       checkAndRegen (path, expr) = do
-        putStrLn $ "checking for peak: " ++ path
+        when DEBUG $ putStrLn $ "checking for peak: " ++ path
         needsRegen <- not <$> doesFileExist path
-        when needsRegen $ putStrLn ("needs regen " ++ path) >> genPeakFile path expr
+        when needsRegen $ do
+          when DEBUG $ putStrLn ("needs regen " ++ path)
+          genPeakFile path expr
       doStream (path, expr) = fmap snd $ Thread.forkIO $ do
         checkAndRegen (path, expr)
         readPeakFile path
@@ -135,16 +138,16 @@ genPeakFile fp expr =
  where
   lockfile = fp <.> "lck"
   opener = do
-    putStrLn $ "peak file name: " ++ fp
+    when DEBUG $ putStrLn $ "peak file name: " ++ fp
     h <- openBinaryFile fp WriteMode
-    putStrLn $ "creating lockfile: " ++ lockfile
+    when DEBUG $ putStrLn $ "creating lockfile: " ++ lockfile
     writeFile lockfile ""
-    putStrLn "lockfile created"
+    when DEBUG $ putStrLn "lockfile created"
     return h
   closer h = do
     hClose h
     removeFile lockfile
-    putStrLn $ "removing lockfile: " ++ lockfile
+    when DEBUG $ putStrLn $ "removing lockfile: " ++ lockfile
 
 readPeakFileNonBlocking :: FilePath -> IO (Maybe (U.Vector Peak))
 readPeakFileNonBlocking fp = do
