@@ -1,7 +1,7 @@
-{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveDataTypeable, GeneralizedNewtypeDeriving #-}
 
 module Jaek.Base (
-  SampleCount
+  SampleCount (..)
  ,ChanNum
  ,TreePath
  ,NodeRef (..)
@@ -16,6 +16,8 @@ module Jaek.Base (
 where
 
 import Data.Data
+import qualified Data.Hashable as H
+import qualified Data.Digest.Murmur as MH
 
 import Control.Applicative as X
 import Control.Monad       as X
@@ -25,7 +27,14 @@ import Control.Monad.Trans.Class as X
 import Debug.Trace
 import Text.Printf
 
-type SampleCount = Int
+newtype SampleCount = SC Int
+ deriving (Eq, Show, Ord, Num, Integral, Enum, Real, Data, Typeable
+          ,H.Hashable, MH.Hashable)
+
+newtype Duration = D Int
+ deriving (Eq, Show, Ord, Num, Integral, Enum, Real, Data, Typeable
+          ,H.Hashable, MH.Hashable)
+
 type ChanNum = Int
 
 type TreePath = [Int]

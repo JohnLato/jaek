@@ -33,6 +33,9 @@ instance Parse a => Parse [a] where
 instance Parse Int where
   jparse = fI <$> anyWord64le
 
+instance Parse SampleCount where
+  jparse = fI <$> anyWord64le
+
 instance Parse Integer where
   jparse = fI <$> anyWord64le
 

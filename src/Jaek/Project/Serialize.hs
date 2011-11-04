@@ -36,6 +36,9 @@ instance Build a => Build [a] where
 instance Build Int where
   build = fromInt64le . fI
 
+instance Build SampleCount where
+  build = fromInt64le . fI
+
 instance Build Integer where
   build = fromInt64le . fI
 

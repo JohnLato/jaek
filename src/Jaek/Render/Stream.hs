@@ -25,7 +25,7 @@ renderPeaks ::
   -> AnnDiagram b R2 (First TreePath)
 renderPeaks off dur w pk =
   let (l,h) = U.unzip $ U.map (\(Pk b t) -> (b,t)) pk
-      getIx i = ((fI i * dur `div` w) + off) `div` pksz
+      getIx i = ((fI i * fI dur `div` w) + fI off) `div` pksz
       -- draw only even pixels.  Get a more clear image this way.
       -- I'll give it a try at any rate...
       rvec vec = U.generate (w `div` 2) (\i ->

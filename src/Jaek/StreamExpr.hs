@@ -23,6 +23,7 @@ module Jaek.StreamExpr (
 
 where
 
+import           Jaek.Base
 import           Jaek.Gen
 
 import           Sound.Iteratee
@@ -92,11 +93,12 @@ compile ::
 compile (FileSource fp af chan off dur) i =
   let numChans = fromIntegral $ numberOfChannels af
   in myRun =<< enumAudioIteratee fp (do
-       L.drop (off*numChans)
-       (getChannel numChans chan ><> L.takeUpTo dur) i )
-compile (GenSource gfunc dur) i = enumGen gfunc (L.takeUpTo dur i) >>= myRun
-compile (Region expr off dur) i = compile expr
-                                    (L.drop off >> L.takeUpTo dur i) >>= myRun
+       L.drop (fI off*numChans)
+       (getChannel numChans chan ><> L.takeUpTo (fI dur)) i )
+compile (GenSource gfunc dur) i =
+  enumGen gfunc (L.takeUpTo (fI dur) i) >>= myRun
+compile (Region expr off dur) i =
+  compile expr (L.drop (fI off) >> L.takeUpTo (fI dur) i) >>= myRun
 compile (StreamSeq exprs) i = foldr ((>=>) . compile) enumEof exprs i
 compile (Mix s1 s2) i       = mergeEnums (compile s1) (compile s2) mixEtee i
 

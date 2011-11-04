@@ -155,6 +155,8 @@ rngToMap = M.fromListWith R.append . (map . fmap) R.singleton
 
 -- | usually I use @(Int,SampleCount, SampleCount)@ for the region type,
 -- but here it's nested tuples to facilitate further processing
+-- 
+-- The return type should be interpreted as (Channel, (Offset, Duration))
 dragToRegions ::
   (Int, Int)
   -> TreeZip
