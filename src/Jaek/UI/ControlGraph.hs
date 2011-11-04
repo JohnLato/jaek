@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 module Jaek.UI.ControlGraph (
   jaekControlGraph
 )
@@ -28,6 +30,11 @@ jaekControlGraph sources dSize dFocus dViewMap dZip = do
   addController $ bindController (editCtrl1 dSize dViewMap clipCtrl
                                     wvSelectCtrl sources)
                                  wvSelectCtrl
+#if DEBUG
+  watch "waveSelection" wvSelectCtrl (changes . dState)
+  watch "clipboard" clipCtrl (changes . dState)
+#endif
+
   buildController (waveNav dFocus dZip)
 
   return ()
