@@ -40,7 +40,7 @@ Executable jaek
                       ,iteratee       >= 0.8.4.0 && < 0.9
                       ,murmurhash3    >= 1       && < 2
                       ,monads-tf      >= 0.1     && < 0.2
-                      ,splaytree      >= 0.1     && < 0.3
+                      ,splaytree      >= 0.1.2   && < 0.3
                       ,stm            >= 2.2     && < 3.0
                       ,parallel       >= 2.1     && < 4.0
                       ,threads        >= 0.3     && < 0.5
