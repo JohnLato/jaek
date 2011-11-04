@@ -27,7 +27,10 @@ module Jaek.Tree (
  ,numChans
  ,getExprs
  ,getExprs'
+ ,getTransforms
+ ,getTransforms'
  ,liftT
+ ,liftZ
  -- ** user tree manipulation functions
  ,mkCut
  ,mkMute
@@ -61,9 +64,14 @@ data Node =
  | Mod TreePath [StreamT] [StreamExpr]
  deriving (Eq, Show, Data, Typeable)
 
--- | lift a "function on a node" to a "function on a tree".
+-- | lift a "function on a node" to a "fuction on a tree".
 liftT :: (Node -> a) -> HTree -> a
 liftT f (Node dt _) = f dt
+
+-- | lift a "function on a tree" to a
+--  "function on current position in the zipper"
+liftZ :: (HTree -> a) -> TreeZip -> a
+liftZ f = f . hole
 
 -- | the number of channels in a node
 numChans :: Node -> Int
@@ -78,6 +86,13 @@ getExprs' :: Node -> [StreamExpr]
 getExprs' Root            = []
 getExprs' (Init _ _ chns) = chns
 getExprs' (Mod _ _ chns)  = chns
+
+getTransforms :: HTree -> [StreamT]
+getTransforms = liftT getTransforms'
+
+getTransforms' :: Node -> [StreamT]
+getTransforms' (Mod _ cs _) = cs
+getTransforms' _ = []
 
 -- | filter a list so only valid channels are included
 validateChans :: Node -> [Int] -> [Int]
