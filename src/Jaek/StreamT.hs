@@ -14,8 +14,8 @@ import           Data.Data
 -- with type StreamExpr -> StreamExpr, but that would be hard to
 -- serialize.
 data StreamT =
-   Cut    ChanNum         SampleCount SampleCount
- | Mute   ChanNum         SampleCount SampleCount
- | Insert ChanNum NodeRef ChanNum SampleCount SampleCount SampleCount
- | Mix    ChanNum NodeRef ChanNum SampleCount SampleCount SampleCount
+   Cut    ChanNum         SampleCount Duration
+ | Mute   ChanNum         SampleCount Duration
+ | Insert ChanNum NodeRef ChanNum SampleCount SampleCount Duration
+ | Mix    ChanNum NodeRef ChanNum SampleCount SampleCount Duration
  deriving (Eq, Show, Data, Typeable)

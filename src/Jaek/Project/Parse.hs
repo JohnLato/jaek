@@ -36,6 +36,9 @@ instance Parse Int where
 instance Parse SampleCount where
   jparse = fI <$> anyWord64le
 
+instance Parse Duration where
+  jparse = fI <$> anyWord64le
+
 instance Parse Integer where
   jparse = fI <$> anyWord64le
 

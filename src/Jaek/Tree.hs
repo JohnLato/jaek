@@ -54,7 +54,7 @@ import           Data.Maybe
 import           Data.Tree
 
 -- | Reference to a section of audio
-type ClipRef = (Int, SampleCount, SampleCount)
+type ClipRef = (Int, SampleCount, Duration)
 
 -- This is not the same as the Data.Tree.Node constructor.  Instead, it's the
 -- label which is used inside a Tree (the payload at the Node).
@@ -244,7 +244,7 @@ mkMute sels = mod1 "mkMute" (map sel1 sels) $ \cn ->
 mkInsert
   :: [(Int,Int)]   -- ^ (srcChn, dstChn)
   -> SampleCount   -- ^ source Offset
-  -> SampleCount   -- ^ source duration
+  -> Duration      -- ^ source duration
   -> SampleCount   -- ^ destination offset
   -> NodeRef       -- ^ reference to source expression
   -> TreeZip
@@ -257,7 +257,7 @@ mkInsert chns srcOff dur dstOff srcref =
 mkMix
   :: [(Int,Int)]   -- ^ (srcChn, dstChn)
   -> SampleCount   -- ^ source Offset
-  -> SampleCount   -- ^ source duration
+  -> Duration      -- ^ source duration
   -> SampleCount   -- ^ destination offset
   -> NodeRef       -- ^ reference to source expression
   -> TreeZip

@@ -45,7 +45,7 @@ data ViewChange =
 -- | Information about what's currently in view...
 data View =
     FullView !Double !Double !Double !Double   -- ^ xSize, ySize, xOff, yOff
-  | WaveView !SampleCount !SampleCount -- ^ streamOff, streamDur
+  | WaveView !SampleCount !Duration            -- ^ streamOff, streamDur
   deriving (Eq, Show)
 
 isWaveView :: View -> Bool

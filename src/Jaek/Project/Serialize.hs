@@ -39,6 +39,9 @@ instance Build Int where
 instance Build SampleCount where
   build = fromInt64le . fI
 
+instance Build Duration where
+  build = fromInt64le . fI
+
 instance Build Integer where
   build = fromInt64le . fI
 

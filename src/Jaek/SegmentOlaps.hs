@@ -4,12 +4,17 @@ module Jaek.SegmentOlaps (
 
 where
 
+import Jaek.Base
 import qualified Data.Map as M
 
 -- | given a list of segments @(start, duration)@, return a list of
--- non-overlapping segments.
-removeOlaps :: (Num a, Ord a) => [(a,a)] -> [(a,a)]
-removeOlaps = fromMap . foldl insertSegment M.empty
+-- non-overlapping segments, also @(start, duration)@.
+removeOlaps :: [(SampleCount,Duration)] -> [(SampleCount,Duration)]
+removeOlaps =
+  (fmap . fmap) fI
+  . fromMap
+  . foldl insertSegment M.empty
+  . (fmap . fmap) fI
 
 insertSegment :: (Num a, Ord a) => M.Map a Bool -> (a,a) -> M.Map a Bool
 insertSegment m (off,dur) = firstF . lastF $ M.union pre post

@@ -162,9 +162,9 @@ dragToRegions ::
   -> TreeZip
   -> ViewMap
   -> DragEvent
-  -> [(Int, (SampleCount, SampleCount))]
+  -> [(Int, (SampleCount, Duration))]
 dragToRegions (xSz, ySz) zp vm drg =
-  map (,(xStart,xEnd))
+   map (,(xStart,xEnd .-. xStart))
    . uncurry enumFromTo
    . (uncurry min &&& (subtract 1 . uncurry max))
    . (chnBorder *** chnBorder)

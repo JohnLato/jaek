@@ -95,5 +95,5 @@ unT xs = let ix = fst $ head xs
 -- reT converts the channelized data back to unchannelized tuples,
 -- and also converts from the start/end representation to offset/dur
 -- representation
-reT :: Num b => [(a, [(b,b)])] -> [(a,b,b)]
-reT = concatMap (\(a, ys) -> map (\(b,c) -> (a,b,c-b)) ys)
+reT :: [(a, [(b,c)])] -> [(a,b,c)]
+reT = concatMap (\(a, ys) -> map (\(b,c) -> (a,b,c)) ys)

@@ -7,6 +7,7 @@ module Jaek.UI.Controllers.Clipboard (
 where
 
 import Graphics.UI.Gtk
+import Jaek.Base
 import Jaek.SegmentOlaps
 import Jaek.Tree
 import Jaek.UI.AllSources
@@ -85,8 +86,6 @@ unT xs = let ix = fst $ head xs
          in (ix, map snd xs)
 
 -- reT converts the channelized data back to unchannelized tuples,
--- and also converts from the start/end representation to offset/dur
--- representation
-reT :: Num b => [(a, [(b,b)])] -> [(a,b,b)]
-reT = concatMap (\(a, ys) -> map (\(b,c) -> (a,b,c-b)) ys)
+reT :: [(a, [(b,c)])] -> [(a,b,c)]
+reT = concatMap (\(a, ys) -> map (\(b,c) -> (a,b,c)) ys)
 

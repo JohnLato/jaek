@@ -18,8 +18,8 @@ module Jaek.Base (
 
 where
 
-import Data.AdditiveGroup
-import Data.AffineSpace
+import Data.AdditiveGroup as X
+import Data.AffineSpace   as X
 import Data.Data
 import qualified Data.Hashable as H
 import qualified Data.Digest.Murmur as MH

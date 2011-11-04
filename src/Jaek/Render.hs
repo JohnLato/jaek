@@ -26,7 +26,7 @@ getOffset :: View -> SampleCount
 getOffset (WaveView off _) = off
 getOffset _                = 0
 
-getDur :: View -> SampleCount
+getDur :: View -> Duration
 getDur (WaveView _ dur) = dur
 getDur _                = 44100    -- default duration, can do better
 
