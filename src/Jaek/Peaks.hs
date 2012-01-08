@@ -33,6 +33,8 @@ import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Generic.Base as G
 import qualified Data.Vector.Storable as V
 import qualified Data.Vector.Unboxed as U
+import qualified Data.ZoomCache as Z
+import qualified Data.ZoomCache.Numeric.Types as Z
 
 import qualified Data.ByteString as BS
 import           Data.Bits
@@ -46,10 +48,12 @@ import           Control.Concurrent
 import           Control.Concurrent.STM
 import qualified Control.Concurrent.Thread as Thread
 import           Control.Exception
+import           Control.Monad.State
 import           GHC.Float (double2Int)
 import           System.Directory
 import           System.FilePath
 import           System.IO
+import           Data.Typeable (cast)
 
 -- | A peak chunk, Pk low high
 data Peak = Pk {-# UNPACK #-} !Int16 {-# UNPACK #-} !Int16
@@ -129,40 +133,42 @@ updatePeak (Pk l h) x = Pk (min l x') (max h x')
 
 -- | create a peak file for a stream.  Very rudimentary support at present.
 genPeakFile :: FilePath -> StreamExpr -> IO ()
-genPeakFile fp expr =
-  bracket opener
-          closer
-          $ \h -> run =<< compile expr (joinI $
-            I.group pksz ><> parE (I.mapStream (V.foldl' updatePeak mempty))
-            $ writePkStream h)
+genPeakFile fp expr = do
+  zh <- opener
+  zh' <- execStateT (compile expr (I.mapM_ (Z.write 1)) >>= run) zh
+  closer zh'
  where
+  tm = Z.oneTrack (0 :: Double) False False
+                  Z.ConstantSR (fI pksz) BS.empty
   lockfile = fp <.> "lck"
   opener = do
     when DEBUG $ putStrLn $ "peak file name: " ++ fp
-    h <- openBinaryFile fp WriteMode
+    h <- Z.openWrite tm Nothing False fp
     when DEBUG $ putStrLn $ "creating lockfile: " ++ lockfile
     writeFile lockfile ""
     when DEBUG $ putStrLn "lockfile created"
     return h
   closer h = do
-    hClose h
+    Z.closeWrite h
     removeFile lockfile
     when DEBUG $ putStrLn $ "removing lockfile: " ++ lockfile
 
 readPeakFileNonBlocking :: FilePath -> IO (Maybe (U.Vector Peak))
 readPeakFileNonBlocking fp = do
   locked <- doesFileExist lockfile
-  if locked then return Nothing else do
-    bs <- BS.readFile fp
-    let l = BS.length bs  -- length in bytes, each Peak is 2 Int16s = 4 bytes
-    return . Just $ U.generate (l `div` 4) (\i ->
-      let ix = 4*i
-      in Pk (toInt16 (BS.index bs ix)     (BS.index bs (ix+1)))
-            (toInt16 (BS.index bs (ix+2)) (BS.index bs (ix+3)))
-      )
+  if locked then return Nothing else Just <$> do
+    I.fileDriver (I.joinI $ Z.enumCacheFile Z.standardIdentifiers
+      I.><> Z.filterTracks [1]
+      I.><> Z.enumSummaryLevel 1
+      $ parI procSummary) fp
  where
   lockfile = fp <.> "lck"
-  toInt16 l h = fI $ (fI l :: Int) + shiftL (fI h) 8
+  d2i d = floor $ d * (fI (maxBound :: Int16))
+  sumToPeak (Z.ZoomSummary zSum') =
+    let Just zSum = cast zSum' :: Maybe (Z.Summary Double)
+    in  Pk (d2i . Z.numMin $ Z.summaryData zSum) (d2i . Z.numMax $ Z.summaryData zSum)
+  procSummary = uncurry U.fromListN <$> (I.mapStream sumToPeak
+                  I.=$ (I.length `I.zip` I.stream2list) )
 
 readPeakFile :: FilePath -> IO (U.Vector Peak)
 readPeakFile fp = go
@@ -173,12 +179,6 @@ readPeakFile fp = go
       Just v -> return v
       Nothing -> threadDelay 400 >> go
 
-writePkStream :: Handle -> Iteratee [Peak] IO ()
-writePkStream h = parI . joinI $ I.group 1024 $ I.mapM_ ifn
- where
-  ifn xs = toByteStringIO (BS.hPut h) $ fromWriteList (\(Pk l hi) ->
-             writeInt16le l `mappend` writeInt16le hi) xs
-  
 -- need an Unboxed instance for this one...
 instance Monoid Peak where
   mempty = Pk 0 0
