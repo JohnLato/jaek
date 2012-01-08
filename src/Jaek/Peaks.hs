@@ -22,23 +22,20 @@ import           Jaek.Project
 import           Jaek.StreamExpr
 import           Jaek.Tree
 
-import           Data.Iteratee (Iteratee (..), run, joinI, (><>))
 import qualified Data.Iteratee as I
 import           Data.Iteratee.Parallel
-import           Blaze.ByteString.Builder
 
 import           Data.Digest.Murmur as Hash
 import qualified Data.HashMap.Strict as Map
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Generic.Base as G
-import qualified Data.Vector.Storable as V
 import qualified Data.Vector.Unboxed as U
 import qualified Data.ZoomCache as Z
-import qualified Data.ZoomCache.Numeric.Types as Z
+import qualified Data.ZoomCache.Numeric as Z
 
 import qualified Data.ByteString as BS
-import           Data.Bits
 import           Data.Int
+import qualified Data.IntMap as IM
 import           Data.Maybe
 import           Data.Monoid
 import qualified Data.Set as Set
@@ -47,13 +44,9 @@ import           Control.Arrow (first)
 import           Control.Concurrent
 import           Control.Concurrent.STM
 import qualified Control.Concurrent.Thread as Thread
-import           Control.Exception
 import           Control.Monad.State
-import           GHC.Float (double2Int)
 import           System.Directory
 import           System.FilePath
-import           System.IO
-import           Data.Typeable (cast)
 
 -- | A peak chunk, Pk low high
 data Peak = Pk {-# UNPACK #-} !Int16 {-# UNPACK #-} !Int16
@@ -126,20 +119,16 @@ createReadPeaksForNode root mpRef tzip =
     results <- mapM doStream $ zip paths exprs
     mapM (Thread.result =<<) results
 
-updatePeak :: Peak -> Double -> Peak
-updatePeak (Pk l h) x = Pk (min l x') (max h x')
- where
-  x' = fI . double2Int $ x * fI (maxBound :: Int16)
-
 -- | create a peak file for a stream.  Very rudimentary support at present.
 genPeakFile :: FilePath -> StreamExpr -> IO ()
 genPeakFile fp expr = do
   zh <- opener
-  zh' <- execStateT (compile expr (I.mapM_ (Z.write 1)) >>= run) zh
+  zh' <- execStateT (compile expr (I.mapM_ (Z.write 1)) >>= I.run) zh
   closer zh'
  where
-  tm = Z.oneTrack (0 :: Double) False False
-                  Z.ConstantSR (fI pksz) BS.empty
+  tm = IM.singleton 1
+         $ Z.setCodec (0 :: Double) $ Z.TrackSpec (Z.Codec (0::Double))
+                  False False Z.ConstantSR (fI pksz) BS.empty
   lockfile = fp <.> "lck"
   opener = do
     when DEBUG $ putStrLn $ "peak file name: " ++ fp
@@ -156,16 +145,16 @@ genPeakFile fp expr = do
 readPeakFileNonBlocking :: FilePath -> IO (Maybe (U.Vector Peak))
 readPeakFileNonBlocking fp = do
   locked <- doesFileExist lockfile
-  if locked then return Nothing else Just <$> do
+  if locked then return Nothing else Just <$>
     I.fileDriver (I.joinI $ Z.enumCacheFile Z.standardIdentifiers
       I.><> Z.filterTracks [1]
       I.><> Z.enumSummaryLevel 1
       $ parI procSummary) fp
  where
   lockfile = fp <.> "lck"
-  d2i d = floor $ d * (fI (maxBound :: Int16))
+  d2i d = floor $ d * fI (maxBound :: Int16)
   sumToPeak (Z.ZoomSummary zSum') =
-    let Just zSum = cast zSum' :: Maybe (Z.Summary Double)
+    let Just zSum = Z.toSummaryDouble zSum'
     in  Pk (d2i . Z.numMin $ Z.summaryData zSum) (d2i . Z.numMax $ Z.summaryData zSum)
   procSummary = uncurry U.fromListN <$> (I.mapStream sumToPeak
                   I.=$ (I.length `I.zip` I.stream2list) )
