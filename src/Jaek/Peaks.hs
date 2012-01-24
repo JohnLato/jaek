@@ -27,6 +27,7 @@ import           Data.Iteratee.Parallel
 
 import           Data.Digest.Murmur as Hash
 import qualified Data.HashMap.Strict as Map
+import           Data.Offset
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Generic.Base as G
 import qualified Data.Vector.Unboxed as U
@@ -146,7 +147,8 @@ readPeakFileNonBlocking :: FilePath -> IO (Maybe (U.Vector Peak))
 readPeakFileNonBlocking fp = do
   locked <- doesFileExist lockfile
   if locked then return Nothing else Just <$>
-    I.fileDriver (I.joinI $ Z.enumCacheFile Z.standardIdentifiers
+    I.fileDriver (I.joinI $ I.mapChunks (Offset 0)
+      I.><> Z.enumCacheFile Z.standardIdentifiers
       I.><> Z.filterTracks [1]
       I.><> Z.enumSummaryLevel 1
       $ parI procSummary) fp
@@ -157,7 +159,7 @@ readPeakFileNonBlocking fp = do
     let Just zSum = Z.toSummaryDouble zSum'
     in  Pk (d2i . Z.numMin $ Z.summaryData zSum) (d2i . Z.numMax $ Z.summaryData zSum)
   procSummary = uncurry U.fromListN <$> (I.mapStream sumToPeak
-                  I.=$ (I.length `I.zip` I.stream2list) )
+                  I.=$ (I.countConsumed I.stream2list) )
 
 readPeakFile :: FilePath -> IO (U.Vector Peak)
 readPeakFile fp = go
