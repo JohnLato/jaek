@@ -62,9 +62,9 @@ drawAt mpRef root zp (Just ref) (x,y) vmap =
                              . vcat' (with {catMethod=Distrib, sep=2.001})
                              . map (centerY (strutY 2) |||)
                              . reverse
-                             . parMap rseq (renderPeaks off dur x)
+                             . parMap rseq (renderPeaks x)
                              . unsafePerformIO
-                             $ createReadPeaksForNode root mpRef z'
+                             $ createReadPeaksForNode root off dur x mpRef z'
                          (_dx,dy) = size2D d
                          yscale = fI y / dy
                          off = fI $ getOffset v

@@ -48,12 +48,13 @@ import qualified Control.Concurrent.Thread as Thread
 import           Control.Monad.State
 import           System.Directory
 import           System.FilePath
+import           Text.Printf
 
 -- | A peak chunk, Pk low high
 data Peak = Pk {-# UNPACK #-} !Int16 {-# UNPACK #-} !Int16
 
 pksz :: Int
-pksz = 2048
+pksz = 1024
 
 -- A map to the hash values which become peak filepaths
 type PathMap = Map.HashMap StreamExpr Hash.Hash
@@ -96,10 +97,13 @@ genPeaksForNode root mpRef tzip =
 -- first.
 createReadPeaksForNode ::
   FilePath
+  -> SampleCount
+  -> SampleCount
+  -> Int
   -> TVar PathMap
   -> TreeZip
   -> IO [U.Vector Peak]
-createReadPeaksForNode root mpRef tzip =
+createReadPeaksForNode root start dur pixcount mpRef tzip =
   let htree = hole tzip
       exprs = getExprs htree
       checkAndRegen (path, expr) = do
@@ -110,7 +114,7 @@ createReadPeaksForNode root mpRef tzip =
           genPeakFile path expr
       doStream (path, expr) = fmap snd $ Thread.forkIO $ do
         checkAndRegen (path, expr)
-        readPeakFile path
+        readPeakFile path start dur pixcount
   in do
     paths <- atomically $ do
       mp <- readTVar mpRef
@@ -143,29 +147,71 @@ genPeakFile fp expr = do
     removeFile lockfile
     when DEBUG $ putStrLn $ "removing lockfile: " ++ lockfile
 
-readPeakFileNonBlocking :: FilePath -> IO (Maybe (U.Vector Peak))
-readPeakFileNonBlocking fp = do
+readPeakFileNonBlocking ::
+  FilePath
+  -> SampleCount
+  -> SampleCount
+  -> Int
+  -> IO (Maybe (U.Vector Peak))
+readPeakFileNonBlocking fp start' dur pixcount = do
   locked <- doesFileExist lockfile
+  when DEBUG $ putStrLn $ printf "start: %d\ndur: %d\npixcount: %d\nzoomsz: %d\nzoomLevel: %d\nsampsPerPixel: %d" (fI start'::Int) (fI dur :: Int) pixcount zoomSz zoomLevel sampsPerPixel
   if locked then return Nothing else Just <$>
     I.fileDriver (I.joinI $ I.mapChunks (Offset 0)
       I.><> Z.enumCacheFile Z.standardIdentifiers
       I.><> Z.filterTracks [1]
-      I.><> Z.enumSummaryLevel 1
+      I.><> Z.enumSummaryLevel zoomLevel
+      I.><> I.mapChunks (fmap sumToPeak)
       $ parI procSummary) fp
  where
   lockfile = fp <.> "lck"
   d2i d = floor $ d * fI (maxBound :: Int16)
+  sumToPeak :: Z.ZoomSummary -> Peak
   sumToPeak (Z.ZoomSummary zSum') =
     let Just zSum = Z.toSummaryDouble zSum'
     in  Pk (d2i . Z.numMin $ Z.summaryData zSum) (d2i . Z.numMax $ Z.summaryData zSum)
-  procSummary = uncurry U.fromListN <$> (I.mapStream sumToPeak
-                  I.=$ (I.countConsumed I.stream2list) )
+  -- return @pixcount@ peak chunks from @start@ for @dur@
+  -- already measured for rendering
+  procSummary = do
+    I.drop skipFrames
+    buf <- liftIO $ M.unsafeNew pixcount
+    liftIO $ M.set buf (Pk 0 0)
+    I.takeUpTo numFrames I.=$
+      I.foldM (updateFrame buf) (startIx,startCount)
+    liftIO $ U.unsafeFreeze buf
+  updateFrame buf (ix,count) frame = 
+    let (bump,count') = (count+zoomSz) `divMod` sampsPerPixel
+        newIx         = bump+ix
+    in  when (bump == 1) (writeFn buf newIx frame)
+          >> return (newIx, count')
 
-readPeakFile :: FilePath -> IO (U.Vector Peak)
-readPeakFile fp = go
+  writeFn = if DEBUG then M.write else M.unsafeWrite
+    
+  -- if start is negative, just work from 0
+  -- the starting index needs to be updated thought
+  start   = if start' < 0 then 0 else start'
+  startIx = if start' >= 0
+              then -1
+              else (fI (negate start') `div` sampsPerPixel) - 1
+  startCount = skipFrames*zoomSz `rem` sampsPerPixel
+  sampsPerPixel = fI dur `div` pixcount
+  -- if the zoomLevel == 0, then have to use the soundfile data
+  zoomLevel  = floor $ logBase 2 (fI $ sampsPerPixel `div` pksz :: Double)
+  zoomSz     = 2 ^ zoomLevel * pksz
+  skipFrames = fI (start `div` fI zoomSz)
+  numFrames  = min (fI dur `div` zoomSz) -- total frames available for duration
+                (((sampsPerPixel * (pixcount-(1+startIx))) - startCount) `div` zoomSz)
+
+readPeakFile ::
+  FilePath
+  -> SampleCount
+  -> SampleCount
+  -> Int
+  -> IO (U.Vector Peak)
+readPeakFile fp start dur pixcount = go
  where
   go = do
-    res <- readPeakFileNonBlocking fp
+    res <- readPeakFileNonBlocking fp start dur pixcount
     case res of
       Just v -> return v
       Nothing -> threadDelay 400 >> go
