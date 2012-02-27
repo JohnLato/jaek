@@ -159,10 +159,13 @@ readPeakFileNonBlocking fp start' dur pixcount = do
   if locked then return Nothing else Just <$>
     I.fileDriver (I.joinI $ I.mapChunks (Offset 0)
       I.><> Z.enumCacheFile Z.standardIdentifiers
+      -- this technically creates a small thunk, but the greater efficiency
+      -- in terms of consuming the associated bytestring makes up for it.
+      I.><> I.group 64
+      I.><> I.mapChunks concat
       I.><> Z.filterTracks [1]
       I.><> Z.enumSummaryLevel zoomLevel
-      I.><> I.mapChunks (fmap sumToPeak)
-      $ parI procSummary) fp
+      $ procSummary) fp
  where
   lockfile = fp <.> "lck"
   d2i d = floor $ d * fI (maxBound :: Int16)
@@ -179,10 +182,10 @@ readPeakFileNonBlocking fp start' dur pixcount = do
     I.takeUpTo numFrames I.=$
       I.foldM (updateFrame buf) (startIx,startCount)
     liftIO $ U.unsafeFreeze buf
-  updateFrame buf (ix,count) frame = 
+  updateFrame buf (ix,count) frame =
     let (bump,count') = (count+zoomSz) `divMod` sampsPerPixel
         newIx         = bump+ix
-    in  when (bump == 1) (writeFn buf newIx frame)
+    in  when (bump == 1) (writeFn buf newIx $! sumToPeak frame)
           >> return (newIx, count')
 
   writeFn = if DEBUG then M.write else M.unsafeWrite
