@@ -1,3 +1,7 @@
+{- | Basic editing functions.
+     Mute, Delete, Insert.
+-}
+
 module Jaek.UI.Controllers.Edit1 (
   editCtrl1
 )
