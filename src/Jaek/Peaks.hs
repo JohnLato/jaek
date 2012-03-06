@@ -1,5 +1,4 @@
-{-# LANGUAGE CPP
-            ,MultiParamTypeClasses
+{-# LANGUAGE MultiParamTypeClasses
             ,TypeFamilies
             ,FlexibleContexts
             ,TupleSections #-}
@@ -107,10 +106,10 @@ createReadPeaksForNode root start dur pixcount mpRef tzip =
   let htree = hole tzip
       exprs = getExprs htree
       checkAndRegen (path, expr) = do
-        when DEBUG $ putStrLn $ "checking for peak: " ++ path
+        when debug $ putStrLn $ "checking for peak: " ++ path
         needsRegen <- not <$> doesFileExist path
         when needsRegen $ do
-          when DEBUG $ putStrLn ("needs regen " ++ path)
+          when debug $ putStrLn ("needs regen " ++ path)
           genPeakFile path expr
       doStream (path, expr) = fmap snd $ Thread.forkIO $ do
         checkAndRegen (path, expr)
@@ -136,16 +135,16 @@ genPeakFile fp expr = do
                   False False Z.ConstantSR (fI pksz) BS.empty
   lockfile = fp <.> "lck"
   opener = do
-    when DEBUG $ putStrLn $ "peak file name: " ++ fp
+    when debug $ putStrLn $ "peak file name: " ++ fp
     h <- Z.openWrite tm Nothing False fp
-    when DEBUG $ putStrLn $ "creating lockfile: " ++ lockfile
+    when debug $ putStrLn $ "creating lockfile: " ++ lockfile
     writeFile lockfile ""
-    when DEBUG $ putStrLn "lockfile created"
+    when debug $ putStrLn "lockfile created"
     return h
   closer h = do
     Z.closeWrite h
     removeFile lockfile
-    when DEBUG $ putStrLn $ "removing lockfile: " ++ lockfile
+    when debug $ putStrLn $ "removing lockfile: " ++ lockfile
 
 readPeakFileNonBlocking ::
   FilePath
@@ -155,7 +154,7 @@ readPeakFileNonBlocking ::
   -> IO (Maybe (U.Vector Peak))
 readPeakFileNonBlocking fp start' dur pixcount = do
   locked <- doesFileExist lockfile
-  when DEBUG $ putStrLn $ printf "start: %d\ndur: %d\npixcount: %d\nzoomsz: %d\nzoomLevel: %d\nsampsPerPixel: %d" (fI start'::Int) (fI dur :: Int) pixcount zoomSz zoomLevel sampsPerPixel
+  when debug $ putStrLn $ printf "start: %d\ndur: %d\npixcount: %d\nzoomsz: %d\nzoomLevel: %d\nsampsPerPixel: %d" (fI start'::Int) (fI dur :: Int) pixcount zoomSz zoomLevel sampsPerPixel
   if locked then return Nothing else Just <$>
     I.fileDriver (I.joinI $ I.mapChunks (Offset 0)
       I.><> Z.enumCacheFile Z.standardIdentifiers
@@ -188,7 +187,7 @@ readPeakFileNonBlocking fp start' dur pixcount = do
     in  when (bump == 1) (writeFn buf newIx $! sumToPeak frame)
           >> return (newIx, count')
 
-  writeFn = if DEBUG then M.write else M.unsafeWrite
+  writeFn = if debug then M.write else M.unsafeWrite
     
   -- if start is negative, just work from 0
   -- the starting index needs to be updated thought

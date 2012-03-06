@@ -1,6 +1,7 @@
 {-# LANGUAGE TypeFamilies
             ,DeriveDataTypeable
-            ,GeneralizedNewtypeDeriving #-}
+            ,GeneralizedNewtypeDeriving
+            ,CPP #-}
 
 module Jaek.Base (
   SampleCount (..)
@@ -13,6 +14,7 @@ module Jaek.Base (
  ,ignore
  ,annMaybe
  ,tpass
+ ,debug
  ,module X
 )
 
@@ -76,3 +78,6 @@ annMaybe s m = ErrorT $ fmap (maybe (Left s) Right) m
 -- | Adds a trace to `a` with the given label
 tpass :: Show a => String -> a -> a
 tpass lbl a = trace (printf (lbl ++ ": %s\n") (show a)) a
+
+debug :: Bool
+debug = DEBUG
