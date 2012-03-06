@@ -8,9 +8,10 @@ where
 import           Graphics.UI.Gtk
 
 import           Jaek.Base
+import           Jaek.IO
 import           Jaek.Peaks (defaultPathMap)
 import           Jaek.Project
-import           Jaek.Tree (HTree)
+import           Jaek.Tree (HTree, liftZ, getExprs)
 import           Jaek.UI.Actions
 import           Jaek.UI.AllSources
 import           Jaek.UI.ControlGraph
@@ -34,6 +35,7 @@ uiDef =
   \      <menuitem name=\"Open\" action=\"OpenAction\" />\
   \      <menuitem name=\"Save\" action=\"SaveAction\" />\
   \      <menuitem name=\"Import\" action=\"ImportAction\" />\
+  \      <menuitem name=\"Render\" action=\"RenderAction\" />\
   \      <menuitem name=\"Close\" action=\"QuitAction\" />\
   \    </menu>\
   \    <menu name=\"Edit\" action=\"EditAction\">\
@@ -74,6 +76,7 @@ createMainWindow iProject iTree = do
         eOpenDoc = getOpenSource evtSrcs
         eSaveDoc = getSaveSource evtSrcs
         eNewSource = getImportSource evtSrcs
+        eRender    = getRenderSource evtSrcs
 
     eMainExpose <- exposeEvents mainArea
     -- only the window receives keypress events...
@@ -118,6 +121,10 @@ createMainWindow iProject iTree = do
     reactimate $ apply ((\fp tz () -> writeProject fp tz)
                           <$> bFName <*> FRP.value bZip)
                        eSaveDoc
+    -- render output when requested
+    reactimate $ (\tz fmt -> renderExprs fmt (liftZ getExprs tz))
+                     <$> FRP.value bZip
+                 <@> eRender
 
   FRP.actuate network
   ui <- uiManagerNew

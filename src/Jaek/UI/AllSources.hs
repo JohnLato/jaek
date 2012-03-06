@@ -7,6 +7,7 @@ where
 
 import Graphics.UI.Gtk
 
+import Jaek.Base
 import Jaek.StreamExpr
 import Jaek.Tree
 import Jaek.UI.MenuActionHandlers
@@ -18,6 +19,7 @@ data Sources = Sources {
  ,getOpenSource    :: Event (String, HTree)
  ,getSaveSource    :: Event ()
  ,getImportSource  :: Event (String, [StreamExpr])
+ ,getRenderSource  :: Event WriteInfo
  ,getZoomInSource  :: Event Zoom
  ,getZoomOutSource :: Event Zoom
  ,getCopySource    :: Event ()
@@ -33,9 +35,10 @@ makeSources actGrp win =
   <*> openHandler    actGrp win
   <*> saveHandler    actGrp win
   <*> importHandler  actGrp win
+  <*> renderHandler  actGrp win
   <*> zoomInHandler  actGrp win
   <*> zoomOutHandler actGrp win
   <*> deleteHandler  actGrp win
   <*> insertHandler  actGrp win
   <*> muteHandler    actGrp win
-  <*> copyHandler     actGrp win
+  <*> copyHandler    actGrp win

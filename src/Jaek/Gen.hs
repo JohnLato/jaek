@@ -1,8 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable, NoMonomorphismRestriction ,RankNTypes #-}
 
 module Jaek.Gen (
-  Vec
- ,GenFunc (..)
+  GenFunc (..)
  ,enumGen
  ,module Jaek.Base
 )
@@ -32,8 +31,6 @@ instance Hashable GenFunc where
 instance H.Hashable GenFunc where
   hash Null       = 1
   hash (ConstF x) = 2 `H.combine` H.hash x
-
-type Vec = V.Vector Double
 
 enumGen :: Monad m => GenFunc -> Enumerator Vec m a
 enumGen Null =

@@ -111,7 +111,7 @@ openProjectDialog = do
       (fp, ) <$> liftIO (readProject fp)
     _ -> widgetDestroy fc >> return Nothing
 
-renderAudioDialog :: IO (Maybe String)
+renderAudioDialog :: IO (Maybe WriteInfo)
 renderAudioDialog = do
   dlg <- dialogNew
   vb  <- dialogGetUpper dlg
@@ -128,6 +128,7 @@ renderAudioDialog = do
   resp <- dialogRun dlg
   case resp of
     ResponseOk -> do
+      fp <- fileChooserGetFilename fc
       widgetDestroy dlg
-      fileChooserGetFilename fc
+      return $ fmap (\fp' -> (fp', Wave, AudioFormat 2 44100 16)) fp
     _ -> widgetDestroy dlg >> return Nothing

@@ -7,8 +7,12 @@ module Jaek.Base (
   SampleCount (..)
  ,Duration (..)
  ,ChanNum
+ ,AudioFormat (..)
+ ,SupportedFileFormat (..)
  ,TreePath
  ,NodeRef (..)
+ ,Vec
+ ,WriteInfo
  ,fI
  ,liftIO
  ,ignore
@@ -20,19 +24,21 @@ module Jaek.Base (
 
 where
 
-import Data.AdditiveGroup as X
-import Data.AffineSpace   as X
-import Data.Data
+import           Data.AdditiveGroup as X
+import           Data.AffineSpace   as X
+import           Data.Data
 import qualified Data.Hashable as H
 import qualified Data.Digest.Murmur as MH
+import qualified Data.Vector.Storable as V
+import           Sound.Iteratee
 
-import Control.Applicative as X
-import Control.Monad       as X
-import Control.Monad.Error
-import Control.Monad.Trans.Class as X
+import           Control.Applicative as X
+import           Control.Monad       as X
+import           Control.Monad.Error
+import           Control.Monad.Trans.Class as X
 
-import Debug.Trace
-import Text.Printf
+import           Debug.Trace
+import           Text.Printf
 
 newtype SampleCount = SC Int
  deriving (Eq, Show, Ord, Num, Integral, Enum, Real, Data, Typeable
@@ -65,6 +71,10 @@ data NodeRef =
    AbsPath TreePath
  | RelPath Int TreePath
  deriving (Eq, Show, Data, Typeable)
+
+type Vec = V.Vector Double
+
+type WriteInfo = (FilePath, SupportedFileFormat, AudioFormat)
 
 fI :: (Num b, Integral a) => a -> b
 fI = fromIntegral

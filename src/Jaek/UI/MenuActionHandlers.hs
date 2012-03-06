@@ -20,7 +20,7 @@ module Jaek.UI.MenuActionHandlers (
 where
 
 import Graphics.UI.Gtk
-import Jaek.Base (debug)
+import Jaek.Base
 import Jaek.IO
 import Jaek.StreamExpr
 import Jaek.Tree
@@ -125,13 +125,14 @@ importHandler actGrp _win = do
 renderHandler
   :: ActionGroup
   -> Window
-  -> NetworkDescription (Event ())
+  -> NetworkDescription (Event WriteInfo)
 renderHandler actGrp _win = do
   act <- liftIO renderAction
   liftIO $ actionGroupAddActionWithAccel actGrp act (Just "<Control>R")
   maybeEvent0 act $ runMaybeT $ do
-    params <- lift renderAudioDialog
-    when debug $ lift $ putStrLn $ "got: " ++ show params
+    params <- MaybeT renderAudioDialog
+    when debug . lift . putStrLn $ "got: " ++ show params
+    return params
 
 -- -----------------------------------------
 -- view sources
