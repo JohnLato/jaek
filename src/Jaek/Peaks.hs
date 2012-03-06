@@ -62,7 +62,7 @@ type PathMap = Map.HashMap StreamExpr Hash.Hash
 defaultPathMap :: IO (TVar PathMap)
 defaultPathMap = newTVarIO Map.empty
 
--- | get the path for a the peak file of a StreamExpr.  If it's not in the map
+-- | get the path for the peak file of a StreamExpr.  If it's not in the map
 -- already, return a new map with it added.
 genExprPath :: FilePath -> PathMap -> StreamExpr -> (FilePath, Maybe PathMap)
 genExprPath root mp str = maybe uRes fromMap $ Map.lookup str mp
