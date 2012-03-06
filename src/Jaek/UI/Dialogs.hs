@@ -5,6 +5,7 @@ module Jaek.UI.Dialogs (
  ,runInitialMenu
  ,newProjectDialog
  ,openProjectDialog
+ ,renderAudioDialog
 )
 
 where
@@ -110,3 +111,23 @@ openProjectDialog = do
       (fp, ) <$> liftIO (readProject fp)
     _ -> widgetDestroy fc >> return Nothing
 
+renderAudioDialog :: IO (Maybe String)
+renderAudioDialog = do
+  dlg <- dialogNew
+  vb  <- dialogGetUpper dlg
+
+  fc  <- fileChooserWidgetNew FileChooserActionSave
+  set fc [fileChooserSelectMultiple := False
+         ,fileChooserLocalOnly := True]
+
+  boxPackStart vb fc PackGrow 0
+  dialogAddButton dlg stockCancel ResponseCancel
+  dialogAddButton dlg stockOk     ResponseOk
+
+  widgetShowAll dlg
+  resp <- dialogRun dlg
+  case resp of
+    ResponseOk -> do
+      widgetDestroy dlg
+      fileChooserGetFilename fc
+    _ -> widgetDestroy dlg >> return Nothing

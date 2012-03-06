@@ -7,6 +7,7 @@ module Jaek.UI.MenuActionHandlers (
  ,openHandler
  ,saveHandler
  ,importHandler
+ ,renderHandler
  ,zoomInHandler
  ,zoomOutHandler
  ,copyHandler
@@ -19,6 +20,7 @@ module Jaek.UI.MenuActionHandlers (
 where
 
 import Graphics.UI.Gtk
+import Jaek.Base (debug)
 import Jaek.IO
 import Jaek.StreamExpr
 import Jaek.Tree
@@ -28,6 +30,9 @@ import Jaek.UI.FrpHandlers
 import Jaek.UI.Views (Zoom (..))
 
 import Reactive.Banana
+import Control.Monad
+import Control.Monad.Trans.Class
+import Control.Monad.Trans.Maybe
 
 createHandlers :: ActionGroup -> Window -> IO ()
 createHandlers actGrp win =
@@ -87,7 +92,10 @@ saveHandler actGrp _win = do
   maybeEvent0 act $ return $ Just ()
 
 -- |import a new audio source
-importHandler :: ActionGroup -> Window -> NetworkDescription (Event (String, [StreamExpr]))
+importHandler
+  :: ActionGroup
+  -> Window
+  -> NetworkDescription (Event (String, [StreamExpr]))
 importHandler actGrp _win = do
   act <- liftIO importAction
   liftIO $ actionGroupAddActionWithAccel actGrp act (Just "<Control>I")
@@ -114,6 +122,16 @@ importHandler actGrp _win = do
               Right exprs -> return $ Just (fp, exprs)
       _ -> widgetDestroy fc >> return Nothing
 
+renderHandler
+  :: ActionGroup
+  -> Window
+  -> NetworkDescription (Event ())
+renderHandler actGrp _win = do
+  act <- liftIO renderAction
+  liftIO $ actionGroupAddActionWithAccel actGrp act (Just "<Control>R")
+  maybeEvent0 act $ runMaybeT $ do
+    params <- lift renderAudioDialog
+    when debug $ lift $ putStrLn $ "got: " ++ show params
 
 -- -----------------------------------------
 -- view sources
