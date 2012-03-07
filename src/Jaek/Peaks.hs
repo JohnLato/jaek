@@ -198,8 +198,8 @@ readPeakFileNonBlocking fp start' dur pixcount = do
   startCount = skipFrames*zoomSz `rem` sampsPerPixel
   sampsPerPixel = fI dur `div` pixcount
   -- if the zoomLevel == 0, then have to use the soundfile data
-  zoomLevel  = floor $ logBase 2 (fI $ sampsPerPixel `div` pksz :: Double)
-  zoomSz     = 2 ^ zoomLevel * pksz
+  zoomLevel  = floor $ logBase 2 (fI $ 1 + (sampsPerPixel `div` pksz) :: Double)
+  zoomSz     = 2 ^ (max 0 $ zoomLevel-1) * pksz
   skipFrames = fI (start `div` fI zoomSz)
   numFrames  = min (fI dur `div` zoomSz) -- total frames available for duration
                 (((sampsPerPixel * (pixcount-(1+startIx))) - startCount) `div` zoomSz)
