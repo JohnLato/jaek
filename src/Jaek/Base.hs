@@ -18,6 +18,7 @@ module Jaek.Base (
  ,ignore
  ,annMaybe
  ,tpass
+ ,traceD
  ,debug
  ,module X
 )
@@ -85,9 +86,14 @@ ignore m = m >> return ()
 annMaybe :: (Monad m, Functor m) => String -> m (Maybe a) -> ErrorT String m a
 annMaybe s m = ErrorT $ fmap (maybe (Left s) Right) m
 
--- | Adds a trace to `a` with the given label
+-- | Adds a trace to `a` with the given label, in debug mode
 tpass :: Show a => String -> a -> a
-tpass lbl a = trace (printf (lbl ++ ": %s\n") (show a)) a
+tpass lbl a = traceD (printf (lbl ++ ": %s\n") (show a)) a
+
+traceD :: String -> a -> a
+traceD str a = if DEBUG
+   then trace str a
+   else a
 
 debug :: Bool
 debug = DEBUG
