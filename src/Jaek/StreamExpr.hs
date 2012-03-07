@@ -38,6 +38,7 @@ import qualified Data.Hashable as H
 
 import           Data.List (mapAccumL)
 import           Control.Monad.CatchIO
+import           Text.Printf
 
 data StreamExpr =
    FileSource FilePath AudioFormat ChanNum SampleCount Duration
@@ -118,7 +119,8 @@ cut :: SampleCount -> Duration -> StreamExpr -> StreamExpr
 cut off dur expr =
   let r1 = Region expr 0 (off .-. 0)
       r2 = Region expr (off .+^ dur) (getDur expr - ((off .-. 0) + dur))
-  in  cutCleanup $ StreamSeq [r1, r2]
+  in  traceD (printf "cut (off dur): %d %d" off dur)
+             $ cutCleanup $ StreamSeq [r1, r2]
 
 -- | trim the start/end of a StreamExpr, only exposing @dur@ samples from
 -- @offset@.  Dual to 'cut'
@@ -139,7 +141,8 @@ insertSilence off dur expr =
       sl = GenSource Null dur
       r2 = Region expr off (getDur expr - offDur)
       offDur = off .-. 0
-  in  cutCleanup $ StreamSeq [r1, sl, r2]
+  in  traceD (printf "insertSilence (off dur): %d %d" off dur)
+             $ cutCleanup $ StreamSeq [r1, sl, r2]
 
 -- | insert @StreamExpr b@ into @StreamExpr a@ at @dstOff@.
 -- 

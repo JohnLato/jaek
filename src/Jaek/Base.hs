@@ -43,11 +43,11 @@ import           Text.Printf
 
 newtype SampleCount = SC Int
  deriving (Eq, Show, Ord, Num, Integral, Enum, Real, Data, Typeable
-          ,H.Hashable, MH.Hashable)
+          ,H.Hashable, MH.Hashable, PrintfArg)
 
 newtype Duration = D Int
  deriving (Eq, Show, Ord, Num, Integral, Enum, Real, Data, Typeable
-          ,H.Hashable, MH.Hashable)
+          ,H.Hashable, MH.Hashable, PrintfArg)
 
 instance AdditiveGroup SampleCount where
   zeroV = 0
