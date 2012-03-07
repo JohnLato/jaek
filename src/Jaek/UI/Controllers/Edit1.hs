@@ -9,6 +9,7 @@ module Jaek.UI.Controllers.Edit1 (
 where
 
 import Graphics.UI.Gtk
+import Jaek.Base
 import Jaek.SegmentOlaps
 import Jaek.Tree
 import Jaek.UI.AllSources
@@ -85,12 +86,15 @@ keyactOnSelect sz vm src sels key
 -- this slightly convoluted function removes overlapping segments
 -- in each channel.
 mkRegions :: (Int, Int) -> TreeZip -> ViewMap -> [DragEvent] -> [ClipRef]
-mkRegions sz tz vm = reT
+mkRegions sz tz vm = tpass "mkregions: ClipRefs"
+  . reT
   . (fmap . fmap) removeOlaps
   . map unT                      -- [(chn, [(off,dur)])]
   . groupBy ((==) `F.on` fst)
   . sortBy (comparing fst)
   . concatMap (dragToRegions sz tz vm)
+  . tpass "mkRegions: dragEvents "
+
   
 unT :: [(a,b)] -> (a,[b])
 unT xs = let ix = fst $ head xs
