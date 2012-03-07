@@ -1,11 +1,10 @@
-{-# LANGUAGE CPP #-}
-
 module Jaek.UI.ControlGraph (
   jaekControlGraph
 )
 
 where
 
+import Jaek.Base
 import Jaek.Tree
 import Jaek.UI.AllSources
 import Jaek.UI.Controllers
@@ -33,7 +32,7 @@ jaekControlGraph sources dSize dFocus dViewMap dZip = do
                                 wvSelectCtrl
   addController editCtrl
 
-  when DEBUG $ do
+  when debug $ do
     watch "waveSelection" wvSelectCtrl (changes . dState)
     watch "clipboard" clipCtrl (changes . dState)
     watch "commands" editCtrl
