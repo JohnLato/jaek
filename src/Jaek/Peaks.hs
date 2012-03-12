@@ -22,7 +22,6 @@ import           Jaek.StreamExpr
 import           Jaek.Tree
 
 import qualified Data.Iteratee as I
-import           Data.Iteratee.Parallel
 
 import           Data.Digest.Murmur as Hash
 import qualified Data.HashMap.Strict as Map
