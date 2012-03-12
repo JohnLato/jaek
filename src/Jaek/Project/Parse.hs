@@ -12,7 +12,6 @@ import           Jaek.StreamExpr as SE
 import           Jaek.StreamT    as ST
 import           Jaek.Tree
 
-import           Sound.Iteratee (AudioFormat (..))
 import           Data.Attoparsec as A
 import           Data.Attoparsec.Binary
 import           Data.Attoparsec.Char8

@@ -13,7 +13,6 @@ import           Jaek.StreamExpr as SE
 import           Jaek.StreamT    as ST
 import           Jaek.Tree
 
-import           Sound.Iteratee (AudioFormat (..))
 import           Blaze.ByteString.Builder
 import qualified Blaze.ByteString.Builder.Char.Utf8 as U
 
