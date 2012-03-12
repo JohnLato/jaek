@@ -14,7 +14,7 @@ import Jaek.UI.FrpHandlers
 import Jaek.UI.Views
 
 import Reactive.Banana
-import Diagrams.Prelude ((<>))
+import Data.Monoid
 
 -- | navigation valid from within a Wave view
 waveNav ::
@@ -61,17 +61,18 @@ allNav sources dFocus dZip dVmap clicks releases keys motions =
                   ,releasePass = releases
                   ,keysPass    = pass2
                   ,motionsPass = motions
-                  ,eViewChange = vmapChange <> zoomChange
-                  ,redrawTrig  = (() <$ vmapChange) <> (() <$ zooms) }
+                  ,eViewChange = vmapChange `mappend` zoomChange
+                  ,redrawTrig  = (() <$ vmapChange) `mappend` (() <$ zooms) }
  where
   isActive = pure True
   dView = (\vm z foc -> getView vm . hole $ goToFocus z foc)
           <$> dVmap <*> dZip <*> dFocus
   (pass1, vmapChange) = splitEithers $ (treeKey <$> dView <*> dZip) <@> keys
   (pass2, zooms')        = splitEithers $ zoomKey <$> pass1
-  zooms                  = zooms'
-                           <> getZoomInSource sources
-                           <> getZoomOutSource sources
+  zooms                  = mconcat
+                            [zooms'
+                            ,getZoomInSource sources
+                            ,getZoomOutSource sources]
   zoomChange             = (zoomF <$> dView <*> dZip) <@> zooms
 
 zoomKey :: KeyVal -> Either KeyVal Zoom

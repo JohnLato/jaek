@@ -12,7 +12,6 @@ import Jaek.UI.Focus
 import Jaek.UI.Views
 
 import Reactive.Banana
-import Control.Monad (when)
 
 jaekControlGraph
   :: Sources

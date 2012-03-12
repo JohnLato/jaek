@@ -30,8 +30,6 @@ import Jaek.UI.FrpHandlers
 import Jaek.UI.Views (Zoom (..))
 
 import Reactive.Banana
-import Control.Monad
-import Control.Monad.Trans.Class
 import Control.Monad.Trans.Maybe
 
 createHandlers :: ActionGroup -> Window -> IO ()

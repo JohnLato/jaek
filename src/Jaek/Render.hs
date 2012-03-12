@@ -13,10 +13,11 @@ import           Jaek.UI.Views
 
 import           Diagrams.Backend.Cairo
 import           Diagrams.Backend.Cairo.Gtk
-import           Diagrams.Prelude hiding (apply)
+import           Diagrams.Prelude hiding (apply, First, Duration)
 
 import qualified Data.HashMap.Strict as M
 
+import           Data.Monoid
 import           Control.Concurrent.STM
 import           Control.Parallel.Strategies
 
@@ -37,7 +38,7 @@ drawAt
   -> Maybe [Int]
   -> (Int,Int)
   -> ViewMap
-  -> AnnDiagram Cairo R2 (First TreePath)
+  -> QDiagram Cairo R2 (First TreePath)
 drawAt  mpRef  root zp Nothing    win   vmap =
   drawAt mpRef root zp (Just []) win vmap
 drawAt _mpRef _root zp (Just []) _win vmap =
@@ -48,9 +49,9 @@ drawAt _mpRef _root zp (Just []) _win vmap =
       szCon  = 180
       -- since the backend 'toGtkCoords' function auto-recenters,
       -- it's not possible to use it
-      -- at the moment.  I should fix that for diagrams-0.4
-      pos d = let P p = center2D d
-              in translate (szCon *^ (negate xOff, yOff) ^-^ p) d
+      -- at the moment.  I should fix that for diagrams-0.6
+      pos d = let p = unp2 $ center2D d
+              in translate (r2 $ szCon *^ (negate xOff, yOff) ^-^ p) d
   in   pos
        . reflectY
        . scaleY (szCon * yScale)

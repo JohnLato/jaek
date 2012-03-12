@@ -17,10 +17,10 @@ import Jaek.UI.FrpHandlers
 import Jaek.UI.Views
 
 import Reactive.Banana
-import Diagrams.Prelude ((<>))
 
 import Data.Function as F
 import Data.List
+import Data.Monoid
 import Data.Ord
 
 clipboardCtrl :: 
@@ -48,14 +48,14 @@ clipboardCtrl bSz bVm dTz selCtrl sources clicks releases keys motions =
   addToClip = snd <$> splitEithers $
                (keyactOnSelect <$> dTz <*> bSz <*> bVm <*> dState selCtrl)
                <@> filterApply (const <$> value isActive)
-                               (keys <> eventSourceMods sources)
+                               (keys `mappend` eventSourceMods sources)
 
 eventSourceMods
   :: Sources
   -> Event KeyVal
 eventSourceMods sources =
   (   keyFromName "c" <$ getCopySource sources)
-  <> (keyFromName "d" <$ getDeleteSource sources)
+  `mappend` (keyFromName "d" <$ getDeleteSource sources)
 
 keyactOnSelect ::
   TreeZip

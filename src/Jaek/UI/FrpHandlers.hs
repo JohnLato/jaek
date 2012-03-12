@@ -41,12 +41,12 @@ import Graphics.UI.Gtk
 import Jaek.Base
 import Jaek.UI.FrpTypes as F
 import Reactive.Banana as B
-import Diagrams.Prelude ((<>))
 
 import Data.Label as L
 
 import Control.Category
 import Data.Maybe
+import Data.Monoid
 
 -- | A lense for the (X,Y) coordinates of a Click
 xyClick :: ClickEvent :-> (Double, Double)
@@ -191,7 +191,8 @@ genDDrag ::
   Event ClickEvent
   -> Event ([EventModifier], Double, Double) 
   -> Discrete (Maybe DragEvent)
-genDDrag clicks motions = accumD Nothing $ (cf' <$> clicks) <> (mf <$> filtms)
+genDDrag clicks motions = accumD Nothing $
+  (cf' <$> clicks) `mappend` (mf <$> filtms)
  where
   cf (ClickE ReleaseC _ _ _) = False
   cf _                     = True

@@ -7,12 +7,13 @@ module Jaek.Render.Tree (
 where
 
 import Jaek.Tree
-import Diagrams.Prelude
+import Diagrams.Prelude hiding (First (..))
 import Diagrams.Backend.Cairo
 
+import Data.Monoid
 import Data.Tree (Tree (..))
 
-drawTree :: HTree -> AnnDiagram Cairo R2 (First TreePath)
+drawTree :: HTree -> QDiagram Cairo R2 (First TreePath)
 drawTree = drawTree'
 
 -- adding the name because that way I can retrieve the associated NameMap.

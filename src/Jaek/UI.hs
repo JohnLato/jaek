@@ -22,7 +22,7 @@ import           Jaek.UI.MenuActionHandlers
 import           Jaek.UI.Render
 
 import           Reactive.Banana as FRP
-import           Diagrams.Prelude hiding (apply)
+import           Diagrams.Prelude hiding (apply, ui)
 
 import           System.FilePath
 
@@ -87,10 +87,10 @@ createMainWindow iProject iTree = do
     motions     <- motionEvents mainArea
     let bFocus  = FRP.value dFocus
         eFocus  = changes dFocus
-        bFName = stepper iProject (fst <$> (eNewDoc <> eOpenDoc))
+        bFName = stepper iProject (fst <$> (eNewDoc `mappend` eOpenDoc))
         (bRoot, _bProjName) = (takeDirectory <$> bFName,
                                takeFileName  <$> bFName)
-        (bZip, bView) = genBZip iTree (eNewDoc <> eOpenDoc) eNewSource
+        (bZip, bView) = genBZip iTree (eNewDoc `mappend` eOpenDoc) eNewSource
                           treeMods (viewChangeSet ctrlSet) eFocus
         bDraw  = genBDraw mpRef bRoot (FRP.value bZip) bFocus
                           (FRP.value bSz) (FRP.value bView)
@@ -111,11 +111,12 @@ createMainWindow iProject iTree = do
 
     -- redraw the window when the state is updated by dirtying the widget.
     let redrawF = widgetQueueDraw mainArea
-    reactimate $ ( redrawF <$ eNewDoc)
-              <> ( redrawF <$ eOpenDoc)
-              <> ( redrawF <$ eNewSource)
-              <> ( redrawF <$ eFocus)
-              <> ( redrawF <$ redrawSet ctrlSet)
+    reactimate $ mconcat
+                  [redrawF <$ eNewDoc
+                  ,redrawF <$ eOpenDoc
+                  ,redrawF <$ eNewSource
+                  ,redrawF <$ eFocus
+                  ,redrawF <$ redrawSet ctrlSet]
 
     -- save the document when requested
     reactimate $ apply ((\fp tz () -> writeProject fp tz)

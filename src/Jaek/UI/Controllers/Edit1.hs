@@ -20,10 +20,10 @@ import Jaek.UI.Logic.SelectionMediators
 import Jaek.UI.Views
 
 import Reactive.Banana
-import Diagrams.Prelude ((<>))
 
 import Data.Function as F
 import Data.List
+import Data.Monoid
 import Data.Ord
 
 editCtrl1 :: 
@@ -53,15 +53,15 @@ editCtrl1 bSz bVm clipCtrl selCtrl sources clicks releases keys motions =
             (keyactOnSelect <$> bSz <*> bVm <*> dState clipCtrl
                                     <*> dState selCtrl)
             <@> filterApply (const <$> value isActive)
-                            (keys <> eventSourceMods sources)
+                            (keys `mappend` eventSourceMods sources)
 
 eventSourceMods
   :: Sources
   -> Event KeyVal
-eventSourceMods sources =
-  (   keyFromName "m" <$ getMuteSource   sources)
-  <> (keyFromName "d" <$ getDeleteSource sources)
-  <> (keyFromName "i" <$ getInsertSource sources)
+eventSourceMods sources = mconcat
+  [keyFromName "m" <$ getMuteSource   sources
+  ,keyFromName "d" <$ getDeleteSource sources
+  ,keyFromName "i" <$ getInsertSource sources]
 
 keyactOnSelect ::
   (Int,Int)

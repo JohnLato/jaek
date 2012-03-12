@@ -59,7 +59,7 @@ import qualified Control.Monad.State as St
 passFilter :: Event a -> Discrete Bool -> Event a -> Event a
 passFilter full d chk =
   filterApply    (const       <$> value d) chk
-  <> filterApply (const . not <$> value d) full
+  `mappend` filterApply (const . not <$> value d) full
 
 -- | A controller reacts to inputs and produces some sort of output.
 --   The filters pass along any values to which a controller doesn't respond.

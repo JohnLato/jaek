@@ -15,7 +15,7 @@ import Jaek.UI.Render.Overlays
 import Jaek.UI.Views
 
 import Reactive.Banana  as FRP
-import Diagrams.Prelude as D
+import Diagrams.Prelude as D hiding (Duration, end)
 import Data.Foldable (toList)
 import Data.Label as L
 import qualified Data.IntMap as M
@@ -63,7 +63,7 @@ selectCtrl dSize dView dZip clicks releases keys motions =
                   ,bDiagChange = FRP.value $ compositeSelection
                                  <$> dSel <*> chanCurDrag
                   ,redrawTrig  = (() <$ changes dSel')
-                                 <> (() <$ changes chanCurDrag) }
+                                 `mappend` (() <$ changes chanCurDrag) }
  where
   isActive     = isWaveView <$> dView
   filterActive = filterApply (const <$> FRP.value isActive)
@@ -72,9 +72,9 @@ selectCtrl dSize dView dZip clicks releases keys motions =
   inSel     :: HasXY a => Discrete (a -> Bool)
   inSel        = (\sels drag ->
                         not (any (\drg -> contains'
-                          (fromCorners (P $ L.get xyStart drg)
-                                       (P $ L.get xyEnd drg))
-                          $ P $ L.get getXY drag) sels) )
+                          (fromCorners (p2 $ L.get xyStart drg)
+                                       (p2 $ L.get xyEnd drg))
+                          $ p2 $ L.get getXY drag) sels) )
                  <$> dSel
   updateFromView :: Event (RMap -> RMap)
   updateFromView = (mapRangesMono <$>) . fst . mapAccum round $
@@ -92,21 +92,22 @@ selectCtrl dSize dView dZip clicks releases keys motions =
   -- on escape, clear the current drag.
   --   if it's Nothing, clear the full selection
   dSel' = accumD M.empty $ 
-            (dAddDrg <@> sampleD curDrag (eAdd <> (() <$ addSingle)))
-            <> clearSel
-            <> updateFromView
+            (dAddDrg <@> sampleD curDrag (eAdd `mappend` (() <$ addSingle)))
+            `mappend` clearSel
+            `mappend` updateFromView
   unMap = rangesToDrags <$> dSize <*> dZip
   dSel :: Discrete [DragEvent]
   dSel = unMap <*> dSel'
   chanCurDrag = unMap <*> (dAddDrg <*> curDrag <*> pure M.empty)
   curDrag :: Discrete (Maybe DragEvent)
-  curDrag  = let cur' = genDDrag (filtOnPos . filterActive $ clicks <> releases)
+  curDrag  = let cur' = genDDrag (filtOnPos . filterActive $
+                                  clicks `mappend` releases)
                           (filterActive motions)
              in stepperD (initial cur')
-                         ((Nothing <$ eAdd)
-                          <> changes cur'
-                          <> (Nothing <$ breaks)
-                          <> (Nothing <$ addSingle) )
+                         (mconcat [Nothing <$ eAdd
+                                  ,changes cur'
+                                  ,Nothing <$ breaks
+                                  ,Nothing <$ addSingle] )
   clearSel = maybe (const M.empty) (const id) <$> sampleD curDrag breaks
   addSingle = filterApply (FRP.value (const . null <$> dSel)) releases
   (keypass, breaks) = splitEithers (breakKeyF <$> dSel <@> keys)
