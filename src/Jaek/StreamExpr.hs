@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable
+            ,DeriveGeneric
+            ,FlexibleContexts
             ,NoMonomorphismRestriction
             ,RankNTypes
             ,MultiParamTypeClasses
@@ -27,6 +29,9 @@ import           Jaek.Base
 import           Jaek.Gen
 
 import           Sound.Iteratee
+import           Control.Monad.Trans.Control
+import           Control.Monad.IO.Class
+
 import           Data.Iteratee.Iteratee
 import qualified Data.Iteratee.ListLike as L
 import qualified Data.Vector.Storable as V
@@ -37,7 +42,7 @@ import           Data.Digest.Murmur
 import qualified Data.Hashable as H
 
 import           Data.List (mapAccumL)
-import           Control.Monad.CatchIO
+import           GHC.Generics
 import           Text.Printf
 
 data StreamExpr =
@@ -46,7 +51,7 @@ data StreamExpr =
  | Region StreamExpr SampleCount Duration
  | StreamSeq [StreamExpr]
  | Mix StreamExpr StreamExpr
- deriving (Eq, Show, Data, Typeable)
+ deriving (Eq, Show, Data, Typeable, Generic)
 
 instance Uniplate StreamExpr where
   uniplate (FileSource fp af cn off dur) = plate (FileSource fp af cn off dur)
@@ -69,15 +74,8 @@ instance Hashable StreamExpr where
   hashGen (StreamSeq exprs) = salt 4 `combine` hashGen exprs
   hashGen (Mix s1 s2)       = salt 5 `combine` hashGen s1 `combine` hashGen s2
 
-instance H.Hashable StreamExpr where
-  hash (FileSource fp _af cn off dur) =
-    1 `H.combine` H.hash fp `H.combine` H.hash cn
-    `H.combine` H.hash off `H.combine` H.hash dur
-  hash (GenSource g dur) = 2 `H.combine` H.hash g `H.combine` H.hash dur
-  hash (Region expr off dur) = 3 `H.combine`
-    H.hash expr `H.combine` H.hash off `H.combine` H.hash dur
-  hash (StreamSeq exprs) = 4 `H.combine` H.hash exprs
-  hash (Mix s1 s2)       = 5 `H.combine` H.hash s1 `H.combine` H.hash s2
+instance H.Hashable StreamExpr
+instance H.Hashable AudioFormat
 
 getDur :: StreamExpr -> Duration
 getDur (FileSource _ _ _ _ dur) = dur
@@ -87,7 +85,7 @@ getDur (StreamSeq exprs)        = Prelude.sum $ map getDur exprs
 getDur (Mix s1 s2)              = min (getDur s1) (getDur s2)
 
 compile ::
-  (MonadCatchIO m, Functor m)
+  (MonadIO m, MonadBaseControl IO m, Functor m)
   => StreamExpr
   -> Enumerator Vec m a
 compile (FileSource fp af chan off dur) i =
@@ -106,7 +104,7 @@ myRun
   :: (Functor f, Monad f, Monad m)
   => Iteratee s1 f (Iteratee s m a)
   -> f (Iteratee s m a)
-myRun i = either throwErr id <$> tryRun i
+myRun i = either (error "jaek: TODO: implement myRun properly") id <$> tryRun i
 
 mixEtee :: (Functor m, Monad m) => Enumeratee Vec Vec (Iteratee Vec m) a
 mixEtee = L.mergeByChunks (V.zipWith (+)) id id

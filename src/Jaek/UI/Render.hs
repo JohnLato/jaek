@@ -13,8 +13,8 @@ import Jaek.UI.FrpHandlersCustom
 import Jaek.UI.Views
 
 import Diagrams.Prelude
-import Diagrams.Backend.Cairo.Gtk
 import Diagrams.Backend.Cairo
+import Diagrams.Backend.Gtk
 
 import qualified Data.HashMap.Strict as M
 

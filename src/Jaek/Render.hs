@@ -12,7 +12,7 @@ import           Jaek.Tree
 import           Jaek.UI.Views
 
 import           Diagrams.Backend.Cairo
-import           Diagrams.Backend.Cairo.Gtk
+import           Diagrams.Backend.Gtk
 import           Diagrams.Prelude hiding (apply, First, Duration)
 
 import qualified Data.HashMap.Strict as M

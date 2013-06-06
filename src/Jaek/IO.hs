@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 module Jaek.IO (
   newFileExpr
  ,renderExprs
@@ -11,10 +13,10 @@ import           Jaek.StreamExpr
 import           Sound.Iteratee
 import           Data.Iteratee as I
 
+import           Control.Monad.Trans.Control
 import qualified Data.Vector.Storable as V
 
 import           Data.List (intersperse)
-import           Control.Monad.CatchIO
 import           Control.Monad.Error
 
 -- | generate initial StreamExpr from an audio file
@@ -38,7 +40,7 @@ renderExprs (fp, fformat, af') exprs = do
    runAudioMonad $ interleaver exprs (getWriter fformat fp af) >>= run
    return ()
 
-interleaver :: (Functor m, MonadCatchIO m) => [StreamExpr] -> Enumerator Vec m a
+interleaver :: (Functor m, MonadIO m, MonadBaseControl IO m) => [StreamExpr] -> Enumerator Vec m a
 interleaver []   = error "jaek: can't interleave 0 streams"
 interleaver [s1] = compile s1
 interleaver [s1,s2] = mergeEnums (compile s1) (compile s2)

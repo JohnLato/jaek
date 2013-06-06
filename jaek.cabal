@@ -29,36 +29,37 @@ Executable jaek
                       ,bytestring     >= 0.9.0   && < 0.11
                       ,cairo          >= 0.12    && < 0.13
                       ,colour         >= 2.3     && < 3.0
-                      ,containers     >= 0.3     && < 0.5
-                      ,data-default   >= 0.2     && < 0.4
-                      ,diagrams-cairo >= 0.5     && < 0.6
-                      ,diagrams-core  >= 0.5     && < 0.6
-                      ,diagrams-lib   >= 0.5     && < 0.6
-                      ,directory      >= 1.0     && < 1.2
+                      ,containers     >= 0.3     && < 0.6
+                      ,data-default   >= 0.2     && < 0.6
+                      ,diagrams-cairo >= 0.5     && < 0.7
+                      ,diagrams-core  >= 0.5     && < 0.7
+                      ,diagrams-gtk   >= 0.5     && < 0.7
+                      ,diagrams-lib   >= 0.5     && < 0.7
+                      ,directory      >= 1.0     && < 1.3
                       ,filepath       >= 1.2     && < 1.4
                       ,fclabels       >= 1.0     && < 2.0
                       ,gtk            >= 0.12    && < 0.13
                       ,hashable       >= 1.1     && < 2.0
-                      ,iteratee       >= 0.8.7.4 && < 0.9
+                      ,iteratee       >= 0.9.0.0 && < 0.10
                       ,murmurhash3    >= 1       && < 2
                       ,monads-tf      >= 0.1     && < 0.2
                       ,splaytree      >= 0.1.2   && < 0.3
                       ,stm            >= 2.2     && < 3.0
                       ,parallel       >= 2.1     && < 4.0
-                      ,threads        >= 0.3     && < 0.5
-                      ,transformers   >= 0.2     && < 0.3
+                      ,threads        >= 0.3     && < 0.6
+                      ,transformers   >= 0.2     && < 0.4
                       ,tuple          >= 0.2     && < 0.4
                       ,uniplate       >= 1.6     && < 1.7
                       ,utf8-string    >= 0.3.0   && < 0.4
-                      ,vector         >= 0.7     && < 0.10
+                      ,vector         >= 0.7     && < 0.11
                       ,vector-space   >= 0.7     && < 0.9
-                      ,zoom-cache     == 1.2.*
-                      ,attoparsec-binary          >= 0.1.0    && < 0.2
-                      ,attoparsec-iteratee        >= 0.3.0    && < 0.5
+                      ,zoom-cache     == 1.3.*
+                      ,attoparsec-binary          >= 0.1.0    && < 0.3
+                      ,attoparsec-iteratee        >= 0.5.0    && < 0.6
                       ,listlike-instances         >= 0.1      && < 1
-                      ,MonadCatchIO-transformers  >= 0.2.2.2  && < 0.3
-                      ,reactive-banana            >= 0.4      && < 0.5
-                      ,sndfile-enumerators        >= 0.10     && < 0.11
+                      ,monad-control              >= 0.3      && < 0.4
+                      ,reactive-banana            == 0.4.3.2.1
+                      ,sndfile-enumerators        >= 0.11     && < 0.12
                       ,unordered-containers       >= 0.1      && < 0.3
   Other-modules:       Jaek.Base
                       ,Jaek.Gen
